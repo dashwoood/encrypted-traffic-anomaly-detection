@@ -1,0 +1,229 @@
+\chapter{Výsledky}
+\label{chap:vysledky}
+
+Kapitola prezentuje výsledky kontrolovaného experimentu navrženého v~kapitole~\ref{chap:metodika}. Všechny prezentované výsledky (souhrnná tabulka~\ref{tab:metriky-vsechny}) jsou plně reprodukovatelné -- vstupní data, parametry modelů, JSON výstupy a~grafy jsou součástí přiloženého repozitáře (viz sekce~\ref{sec:reprodukovatelnost}). Po popisu přípravy experimentů následují metriky detekce anomálií pro všech jedenáct modelů, systematické srovnání tří skupin metod (hluboké učení, klasické strojové učení, statistické/heuristické) včetně statistických testů, diskuse interpretující zjištění v~kontextu literatury a~provozních aspektů, identifikace situací vhodných pro nasazení hlubokého učení a~omezení interpretace výsledků.
+
+\section{Příprava experimentů}
+\label{sec:priprava-exp}
+
+Před hlavním srovnávacím během experimentu byl ověřen integrační řetězec artefaktu ve fázi demonstrace DSR: příkaz \texttt{docker compose up -d} (viz \path{docker-compose.yml}) spustil kontejnery generátoru a~přijímače; cíl \texttt{make env-smoke-http} pak spustil \path{demo.sh}, počkal na ustálení provozu a~ověřil, že soubor \path{data/logs/flows.csv} existuje a~není prázdný.
+Tím byla prokázána funkčnost živého sběru metadat toků v~kanonickém formátu a~kompatibilita přijímače s~formátem očekávaným nástrojem \texttt{detect} (viz kapitola~\ref{chap:metodika}).
+Doplňkově je v~repozitáři k~dispozici režim \mbox{\texttt{docker-compose.benchmark.yml}} s~komponentou \texttt{flow-replayer} pro přehrávání řádků kanonického CSV do stejného \path{flows.csv}; tento režim slouží k~ověření postupu zpracování nad statickými daty bez generátoru síťového provozu.
+
+Experiment byl spuštěn skriptem \path{experiments/run_experiment.py} s~pevnou  iniciální hodnotou generátorů 42, trénovacím souborem \path{data/datasets/canonical_train.csv}, validačním \path{canonical_val.csv} a~pro sekvenční modely odpovídajícími soubory \path{canonical_train_ordered.csv} a~\path{canonical_val_ordered.csv}.
+Velikost posuvného okna $w$ činila 16 toků.
+Na trénovací množině byla navíc provedena desetinásobná křížová validace pro každý model (výstupy \texttt{cv\_<model>.json}).
+Soubor \path{experiments/results/run_manifest.json} zaznamenává čas běhu, kontrolní součty SHA-256 vstupních CSV a~konfiguraci (Python~3.10, Linux).
+Výpočty probíhaly na pracovní stanici s~procesorem Intel Core i7-10700KF (8~jader, 16~vláken), 16~GB~RAM, pod systémem Linux (WSL2); doba běhu hlavního experimentu byla přibližně 23{,}5~hodiny, z~toho většina připadla na trénink neuronových sítí.
+
+Validační množina obsahuje celkem 51\,534 toků; u~sekvenčních modelů je po zarovnání oken k~dispozici 51\,519 pozorování (prvních $w-1$ toků nemá dostatečnou historii). Skutečný počet anomálií ve validačních datech je 33\,121 (64{,}3\,\%), což reflektuje vysoce nevyvážený charakter UNSW-NB15 po mapování do kanonického schématu. U~sekvenčních podmnožin je počet anomálií 22\,215 kvůli časovému řazení a~odlišnému rozdělení trénovací a~validační části. Tato nevyváženost motivuje prioritu úplnosti v~trénování modelů s~učitelem a~vysokou hodnotu parametru kontaminace u~metod bez učitele (definice a~volba hodnot viz sekce~\ref{sec:predzpracovani} a~\ref{sec:tradicni-algoritmy}).
+
+\section{Výsledky detekce anomálií}
+\label{sec:vysledky-detekce}
+
+Výsledky v~této podkapitole jsou přehledně rozděleny podle skupin metod, přičemž v~tabulce~\ref{tab:metriky-vsechny} jsou pak k~nalezení přehledně všechny výsledné hodnoty metrik napříč metodami.
+
+\subsection{Výkonnost metod hlubokého učení}
+\label{sec:vykon-dl}
+
+Autoencoder jako model hlubokého učení bez učitele dosáhl $\text{F1} = 0{,}37$ při nízké úplnosti ($\text{R} = 0{,}24$), ale vysoké přesnosti ($\text{P} = 0{,}81$). Rekonstrukční chyba autoencoderu je konzervativní detektor~-- toky, které označí jako anomální, skutečně anomální převážně jsou, ale většinu anomálií nezachytí. Kontaminace autoencoderu (0{,}1) je nižší než u~dalších metod bez učitele; zvýšení prahu by zvýšilo úplnost na úkor přesnosti.
+
+Modely s~učitelem dosahují výrazně vyšších metrik díky přímé optimalizaci na klasifikační ztrátu s~váhami tříd. CNN jako model pro jednotlivé toky má nejvyšší F1 ($\text{F1} = 0{,}94$; $\text{P} = 0{,}94$, $\text{R} = 0{,}94$), což je pozoruhodné vzhledem k~tomu, že nepoužívá časový kontext. Jednorozměrné konvoluční filtry pravděpodobně zachycují lokální vzorce ve vektoru příznaků, které postačují pro rozlišení normálních a~anomálních toků v~této datové sadě.
+
+Sekvenční modely na množině dat s~posuvnými okny dosahují: Transformer $\text{F1} = 0{,}88$ ($\text{P} = 0{,}94$, $\text{R} = 0{,}83$), GRU $\text{F1} = 0{,}83$ ($\text{P} = 0{,}96$, $\text{R} = 0{,}73$) a~LSTM $\text{F1} = 0{,}82$ ($\text{P} = 0{,}94$, $\text{R} = 0{,}73$). Transformer dosahuje nejvyšší úplnosti mezi sekvenčními modely díky mechanismu vnitřní pozornosti. GRU a~LSTM mají srovnatelné výsledky; mírně nižší úplnost naznačuje, že některé anomálie se neprojevují v~časovém kontextu a~jsou lépe detekovatelné přístupem založeným na jednotlivých tocích. ROC-AUC u~všech modelů s~učitelem přesahuje $0{,}97$, což indikuje dobrou separaci skóre.
+
+\subsection{Výkonnost klasického strojového učení}
+\label{sec:vykon-klasicke-ml}
+
+Metody klasického strojového učení pracují na všech 51\,534 tocích. Nejlepší F1 skóre v~této skupině vykazuje PCA s~rekonstrukční chybou ($\text{F1} = 0{,}61$, $\text{P} = 0{,}64$, $\text{R} = 0{,}59$), následovaná K-means ($\text{F1} = 0{,}56$, $\text{P} = 0{,}58$, $\text{R} = 0{,}54$) a~izolačním lesem ($\text{F1} = 0{,}44$, $\text{P} = 0{,}51$, $\text{R} = 0{,}39$). Izolační les vykazuje vysokou míru falešných pozitiv (FPR $= 0{,}68$), což naznačuje, že náhodné rozdělování prostoru není pro strukturu této datové sady optimální.
+
+Společným rysem metod klasického strojového učení bez učitele je citlivost na parametr kontaminace: při podhodnocení podílu anomálií (např.~výchozí 0{,}1 místo skutečných 0{,}6) by výsledky byly výrazně horší. V~experimentu byla kontaminace nastavena na přibližný podíl anomálií v~trénovací množině.
+
+\subsection{Výkonnost statistických a~heuristických metod}
+\label{sec:vykon-stat}
+
+Baseline model (\texttt{baseline}), který označuje vše jako normální, dosahuje nulové úplnosti a~slouží jako referenční spodní mez -- jeho celková přesnost klasifikace 35{,}7\,\% odpovídá podílu normálních toků v~datové sadě.
+
+Prahování z-skóre má vysokou přesnost ($\text{P} = 0{,}70$), ale velmi nízkou úplnost ($\text{R} = 0{,}14$), tedy $\text{F1} = 0{,}23$, protože většina anomálií v~UNSW-NB15 neleží v~extrémních hodnotách jednorozměrných příznaků. Hlasování kombinovaného detektoru \texttt{ensemble} dosahuje $\text{F1} = 0{,}57$ ($\text{P} = 0{,}58$, $\text{R} = 0{,}56$), což je lepší než samotné prahování, protože agregace více modelů kompenzuje slabiny jednotlivých metod.
+
+\begin{table}[htbp]
+\centering
+\caption[Metriky na validačních datech]{Metriky na validačních datech (zdroj: \texttt{experiment\_summary.json}, běh s~iniciální hodnotou generátorů~42)}
+\label{tab:metriky-vsechny}
+\footnotesize
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{lrrrrrr}
+\toprule
+Model & P & R & F1 & Acc. & ROC-AUC & PR-AUC \\
+\midrule
+baseline             & 0{,}00 & 0{,}00 & 0{,}00 & 0{,}36 & --   & --   \\
+isolation\_forest    & 0{,}51 & 0{,}39 & 0{,}44 & 0{,}37 & 0{,}31 & 0{,}54 \\
+pca                  & 0{,}64 & 0{,}59 & 0{,}61 & 0{,}52 & 0{,}51 & 0{,}73 \\
+kmeans               & 0{,}58 & 0{,}54 & 0{,}56 & 0{,}45 & 0{,}38 & 0{,}60 \\
+threshold            & 0{,}70 & 0{,}14 & 0{,}23 & 0{,}41 & 0{,}42 & 0{,}61 \\
+ensemble             & 0{,}58 & 0{,}56 & 0{,}57 & 0{,}46 & 0{,}43 & 0{,}59 \\
+\midrule
+autoencoder          & 0{,}81 & 0{,}24 & 0{,}37 & 0{,}47 & 0{,}53 & 0{,}73 \\
+cnn                  & 0{,}94 & 0{,}94 & 0{,}94 & 0{,}92 & 0{,}98 & 0{,}99 \\
+lstm$^{*}$           & 0{,}94 & 0{,}73 & 0{,}82 & 0{,}86 & 0{,}97 & 0{,}95 \\
+gru$^{*}$            & 0{,}96 & 0{,}73 & 0{,}83 & 0{,}87 & 0{,}98 & 0{,}96 \\
+transformer$^{*}$    & 0{,}94 & 0{,}83 & 0{,}88 & 0{,}91 & 0{,}97 & 0{,}95 \\
+\bottomrule
+\end{tabular}
+\\[0.5em]
+\footnotesize $^{*}$Sekvenční modely; $n = 51\,519$ toků s~oknem~16. Hodnoty ROC-AUC/PR-AUC chybí tam, kde model neposkytuje spojité skóre.
+\end{table}
+
+\subsection{Grafické výstupy experimentů}
+\label{sec:graficke-vystupy}
+
+Grafické výstupy experimentu jsou v~repozitáři uloženy v~\path{experiments/results/figures/}; pro sazbu (včetně Overleaf) jsou kopie stejných souborů v~\path{tex/img/results/}.
+
+Obrázek~\ref{fig:roc-curves} ukazuje křivky ROC pro všechny modely s~dostupným spojitým skóre. Modely hlubokého učení s~učitelem (CNN, Transformer, GRU, LSTM) se nacházejí výrazně v~levém horním rohu grafu (ROC-AUC $> 0{,}97$). Křivky klasického strojového učení a~statistických metod naopak leží převážně pod diagonálou náhodného klasifikátoru: izolační les ($\text{AUC} = 0{,}31$), K-means~($0{,}38$), \texttt{ensemble} ($0{,}43$) a~prahování ($0{,}42$); PCA ($0{,}51$) je prakticky na úrovni náhodného rozhodování.
+
+Hodnota ROC-AUC nižší než 0{,}5 signalizuje, že spojité skóre anomálie přiřazené modelem má převrácenou orientaci -- vyšší skóre získávají normální toky namísto anomálních. Binární klasifikační metriky (F1, přesnost, úplnost) v~tabulce~\ref{tab:metriky-vsechny} jsou tímto nedotčeny, protože používají pevný práh odvozený z~parametru kontaminace. ROC křivky však odhalují, že metody klasického strojového učení a~statistické přístupy nedokážou anomálie smysluplně seřadit podle míry podezřelosti, a~jejich využití pro prahově nezávislé hodnocení rizika je proto omezené. Tento jev pravděpodobně souvisí s~konvencí skóre anomálie u~jednotlivých algoritmů (např.~izolační les vnitřně vrací \emph{nižší} skóre pro anomálie) a~s~interakcí mezi vysokým podílem anomálií v~datové sadě a~mapováním skóre na pravděpodobnostní škálu.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.85\textwidth]{roc_curves.png}
+\caption{ROC křivky všech modelů na validačních datech}
+\label{fig:roc-curves}
+\end{figure}
+
+Obrázek~\ref{fig:pr-curves} zobrazuje křivky závislosti přesnosti na úplnosti (precision--recall), které jsou v~kontextu nevyvážené datové sady informativnější než ROC, protože nezohledňují počet pravdivě negativních klasifikací \parencite{Ji2024}. CNN si udržuje přesnost nad 0{,}93 i~při úplnosti blížící se 0{,}95 (PR-AUC $= 0{,}99$). U~metod klasického strojového učení a~statistických přístupů přesnost klesá rychle s~rostoucí úplností; autoencoder a~PCA dosahují PR-AUC okolo~0{,}73, zatímco izolační les a~\texttt{ensemble} se pohybují pod~0{,}60. Křivky PR tak potvrzují, že rozdíl mezi modely hlubokého učení s~učitelem a~ostatními skupinami není artefaktem volby prahu, ale odráží skutečně odlišnou schopnost rozlišovat třídy.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.85\textwidth]{pr_curves.png}
+\caption{precision--recall křivky na validačních datech}
+\label{fig:pr-curves}
+\end{figure}
+
+Obrázek~\ref{fig:metric-comparison} srovnává klíčové metriky (přesnost, úplnost, F1) formou skupinového sloupcového grafu pro deset detektorů; referenční model \texttt{baseline} je z~grafu vynechán, protože má nulovou přesnost, úplnost i~F1 a~nebyl by na měřítku 0--1 viditelný. Vizuálně je patrný skok v~F1 mezi klasickým strojovým učením a~statistickými metodami (nejvýše PCA s~0{,}61) a~modely hlubokého učení s~učitelem (CNN s~0{,}94). U~klasického strojového učení a~statistických metod je rovněž zřetelná disproporce mezi přesností a~úplností: prahování z-skóre dosahuje přesnosti~0{,}70, ale úplnosti pouhých~0{,}14, zatímco modely s~učitelem mají hodnoty obou metrik přibližně vyrovnané.
+
+\begin{figure}[htbp]
+\centering
+% Pouze šířka řádku: kombinace width+height+keepaspectratio dříve vybírala menší měřítko a velikost se nezměnila.
+\includegraphics[width=\textwidth]{metric_comparison.png}
+\caption[Srovnání precision, recall, F1 napříč modely]{Srovnání precision, recall a~F1 skóre napříč modely (bez referenčního baseline)}
+\label{fig:metric-comparison}
+\end{figure}
+
+Obrázek~\ref{fig:confusion-matrices} představuje matice záměn jednotlivých modelů. U~CNN je patrná symetrie -- nízký počet jak falešně pozitivních, tak falešně negativních klasifikací. U~prahového modelu (\texttt{threshold}) naopak dominují falešně negativní chyby (28\,515 z~33\,121 anomálií), což potvrzuje omezenost jednorozměrného prahování na této datové sadě.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{confusion_matrices.png}
+\caption{Matice záměn pro všechny vyhodnocené modely}
+\label{fig:confusion-matrices}
+\end{figure}
+
+\section{Srovnání metod}
+\label{sec:srovnani}
+
+Tato sekce odpovídá na dílčí cíl~5 práce -- systematicky porovnat efektivitu tří skupin metod a~identifikovat situace, ve~kterých je použití hlubokého učení přínosné. Srovnání vychází z~metrik definovaných v~sekci~\ref{sec:metriky} a~z~kontrolovaného experimentu navrženého v~sekci~\ref{sec:design-experimentu}.
+
+\subsection{Analýza skupinových metrik}
+\label{sec:analyza-skupin}
+
+Průměrné F1 v~jednotlivých skupinách na hlavním rozdělení dat činí: hluboké učení 0{,}768, klasické strojové učení 0{,}538 a~statistické/heuristické metody (bez baseline) 0{,}397. Rozdíly mezi skupinami jsou konzistentní: nejlepší model klasického strojového učení (PCA, F1 $= 0{,}61$) nedosahuje ani úrovně nejslabšího modelu hlubokého učení s~učitelem (LSTM, F1 $= 0{,}82$). Při vyřazení autoencoderu (model hlubokého učení bez učitele s~F1 $= 0{,}37$) průměr skupiny hlubokého učení vzroste na~0{,}869. Tyto výsledky jsou konzistentní s~literaturou \parencite{Barut2020}, kde modely hlubokého učení s~učitelem rovněž dominují na datových sadách s~příznaky na úrovni toku.
+
+Z~hlediska úplnosti je situace analogická: průměrná úplnost modelů hlubokého učení s~učitelem je 0{,}809, klasického strojového učení 0{,}444 a~statistických metod 0{,}348 (obojí bez baseline). V~bezpečnostním kontextu je tento rozdíl kritický, protože nezachycená anomálie může mít závažnější důsledky než falešný poplach \parencite{OzkanOkay2021}.
+
+Autoencoder představuje zajímavý hraniční případ: jako architektura hlubokého učení je řazen do příslušné skupiny, ale jeho režim učení bez učitele ho výkonnostně řadí blíže ke klasickému strojovému učení (F1 $= 0{,}37$ oproti PCA s~F1 $= 0{,}61$). To naznačuje, že přínos hlubokého učení plyne primárně z~trénování s~učitelem s~přímou optimalizací na klasifikační ztrátu, nikoli ze samotné neuronové architektury. Tento poznatek je konzistentní s~tématem T1 analýzy v~sekci~\ref{sec:tematicka-analyza}, kde míra supervize byla identifikována jako klíčový praktický diferenciátor metod.
+
+Z~hlediska výpočetních nároků dosahuje CNN jako model bez časového kontextu nejvyššího skóre F1 ($0{,}94$), přičemž jeho klasifikační latence je nižší než u~sekvenčních modelů (viz sekce~\ref{sec:nn-dl}). To podporuje zjištění \textcite{Bakhshi2021}, že CNN je efektivní volbou v~situacích, kdy je rychlost klasifikace kritická. Sekvenční modely (Transformer, GRU, LSTM) dosahují nižšího F1 ($0{,}82$--$0{,}88$), protože přidaný časový kontext na této datové sadě nepřináší dostatečné zlepšení.
+
+\subsection{Statistická významnost rozdílů mezi skupinami metod}
+\label{sec:stat-vyznamnost}
+
+Pro ověření hypotézy práce -- že metody hlubokého učení dosahují vyššího F1~skóre než metody klasického strojového učení i~statistické/heuristické metody -- byly použity testy popsané v~sekci~\ref{sec:stat-testovani}.
+
+Globální test (Kruskal--Wallis). Pro každé z~$k=10$ opakování křížové validace byl spočten průměr F1 přes modely v~každé ze tří skupin. Kruskal--Wallisův test na takto získaných třiceti hodnotách (10 na skupinu) zamítl nulovou hypotézu shodných mediánů $H_0^{\mathrm{glob}}$: $H = 13{,}42$, $p = 0{,}0012$. Na hladině $\alpha = 0{,}05$ lze tedy konstatovat, že mezi třemi skupinami existuje statisticky významný rozdíl v~F1, a~je oprávněné přejít k~párovým testům ověřujícím směr.
+
+Post-hoc jednostranné Wilcoxonovy testy s~Bonferroniho korekcí ($n = 3$ srovnání); první dvě srovnání přímo odpovídají hypotéze práce, třetí je doplňkové:
+\begin{itemize}
+\item Hluboké učení vs.~klasické strojové učení: $W = 52$, $p_{\mathrm{Bonf}} = 0{,}0146$ -- hluboké učení dosahuje vyššího F1 (průměrné fold-means: hluboké učení $= 0{,}737$, klasické strojové učení $= 0{,}491$).
+\item Hluboké učení vs.~statistické: $W = 52$, $p_{\mathrm{Bonf}} = 0{,}0146$ -- hluboké učení dosahuje vyššího F1 (statistické: $0{,}361$).
+\item Klasické strojové učení vs.~statistické (doplňkově): $W = 55$, $p_{\mathrm{Bonf}} = 0{,}0029$ -- klasické strojové učení dosahuje vyššího F1 než statistické metody.
+\end{itemize}
+Obě srovnání přímo ověřující hypotézu jsou na hladině $\alpha = 0{,}05$ statisticky významná i~po Bonferroniho korekci; hypotéza práce je tedy daty podpořena. Doplňkové srovnání klasického strojového učení se statistickými metodami navíc ukazuje, že ani tyto dvě skupiny nejsou mezi sebou zaměnitelné a existuje mezi nimi výkonnostní rozdíl.
+
+Sekundární test bez autoencoderu -- při jeho vyloučení ze skupiny hlubokého učení (zbývají CNN, LSTM, GRU, Transformer) vzrůstá průměr fold-means na 0{,}799 a~statistická významnost se zvyšuje: hluboké učení s~učitelem vs.~klasické strojové učení $p_{\mathrm{Bonf}} = 0{,}0098$, hluboké učení s~učitelem vs.~statistické $p_{\mathrm{Bonf}} = 0{,}0098$.
+
+Křížová validace pro statistické závěry byla provedena na náhodném podvzorku 8\,000 trénovacích toků (iniciální hodnota generátorů~42; u~časově seřazených dat zachován časový sled výběru), zatímco metriky v~tabulce~\ref{tab:metriky-vsechny} vycházejí z~trénování na úplné trénovací množině.
+
+\section{Diskuse}
+\label{sec:diskuse}
+
+Předchozí sekce kvantifikovaly rozdíly mezi třemi skupinami metod na úrovni metrik a~statistických testů. Tato sekce interpretuje zjištění v~širším kontextu -- zasazuje výsledky do rámce existující literatury, analyzuje příčiny pozorovaných rozdílů a~diskutuje kvalitativní aspekty nasazení, které samotné F1~skóre nezachycuje.
+
+\subsection{Interpretace výsledků v~kontextu literatury}
+\label{sec:diskuse-literatura}
+
+Dominance CNN (F1 $= 0{,}94$) mezi modely s~učitelem je konzistentní se závěry \textcite{Barut2020}, kteří na datových sadách s~příznaky na úrovni toku rovněž zaznamenali nejvyšší výkonnost u~modelů hlubokého učení s~učitelem. \textcite{Bakhshi2021} navíc potvrzují, že jednorozměrné konvoluční sítě kombinují vysokou klasifikační přesnost s~nízkou latencí, což je činí vhodnou volbou pro nasazení v~reálném čase. Výsledky experimentu toto pozorování replikují na nezávislé datové sadě s~odlišným příznakovým schématem.
+
+Pozoruhodným zjištěním je, že sekvenční modely Transformer ($\text{F1} = 0{,}88$), GRU ($\text{F1} = 0{,}83$), LSTM ($\text{F1} = 0{,}82$) nedosahují výkonnosti CNN, přestože zachycují časové závislosti mezi toky. Tento výsledek pravděpodobně odráží specifika kanonického schématu: 17~příznaků agreguje statistiky na úrovni jednotlivých toků (průměrné velikosti paketů, mezipaketové intervaly, objemy), kde je většina rozlišující informací obsažena v~rámci jednoho toku. Časový kontext posuvného okna přináší jen malé zlepšení, které navíc nevykompenzuje ztrátu pozorování na okrajích sekvence a~odlišnou validační podmnožinu. Literatura tento jev explicitně nediskutuje, protože většina srovnávacích studií buď testuje pouze jeden typ architektury, nebo pracuje se surovými bajty místo agregovaných příznaků \parencite{Ji2024}.
+
+Z~hlediska témat tematické analýzy (sekce~\ref{sec:tematicka-analyza}) výsledky experimentu potvrzují klíčový poznatek tématu T1 (míra supervize): režim učení je pro výkonnost detektoru rozhodující faktor, zatímco samotná architektura sítě má sekundární vliv. Tří-skupinové rozdělení metod navíc odhaluje, že metody klasického strojového učení (průměrné F1 $= 0{,}491$) se statisticky významně liší od statistických metod (F1 $= 0{,}361$), což by při dvouskupinovém dělení (hluboké učení vs.~ostatní) zůstalo skryté. Téma T3 (důkladnost validace) je naplněno provedením kontrolovaného experimentu na shodné datové sadě s~křížovou validací a~Kruskal--Wallisovým testem s~post-hoc korekcí, čímž se odstraňuje nestejnorodost podmínek, která ztěžuje porovnání výsledků v~rešeršovaných studiích.
+
+\subsection{Vliv režimu učení na výkonnost}
+\label{sec:diskuse-rezim-uceni}
+
+Autoencoder jako model hlubokého učení bez učitele dosáhl F1 $= 0{,}37$, což je výrazně pod úrovní nejlepší metody klasického strojového učení -- PCA (F1 $= 0{,}61$). Tento výsledek zpochybňuje zjednodušenou představu, že neuronová architektura sama o~sobě zaručuje vyšší výkonnost. Příčina spočívá v~odlišnosti optimalizačních cílů: modely s~učitelem (CNN, LSTM, GRU, Transformer) optimalizují váženou binární křížovou entropii, která přímo penalizuje klasifikační chyby s~důrazem na úplnost; autoencoder naproti tomu minimalizuje rekonstrukční chybu (MSE), která je pouze nepřímým ukazatelem anomálie. PCA, ačkoli lineární, pracuje s~přímou rekonstrukční chybou ve vysvětlitelném podprostoru a~má vyšší nastavenou kontaminaci (0{,}5--0{,}6 oproti 0{,}1 u~autoencoderu), čímž zachytí větší podíl anomálních toků.
+
+Citlivost na parametr kontaminace, identifikovaná v~sekci~\ref{sec:hrozby-validity} jako hrozba vnitřní validity, se v~experimentu projevila především u~metod bez učitele v~obou skupinách (hluboké i~klasické strojové učení). Hodnoty kontaminace 0{,}5--0{,}6 byly zvoleny na základě skutečného podílu anomálií v~UNSW-NB15; při výchozí hodnotě 0{,}1 by metody klasického strojového učení dosahovaly výrazně nižšího skóre~F1. Modely hlubokého učení s~učitelem jsou na tento parametr necitlivé, protože optimalizují klasifikační hranici přímo z~anotovaných dat. Tato asymetrie zvýhodňuje modely s~učitelem v~těch situacích, kdy skutečný podíl anomálií v~síťovém provozu není předem znám.
+
+\subsection{Kvalitativní aspekty nasazení}
+\label{sec:diskuse-kvalitativni}
+
+F1~skóre a~ROC-AUC nezachycují několik aspektů, které jsou pro praktické nasazení detektorů podstatné. V~sekci~\ref{sec:hrozby-validity} bylo zmíněno, že tyto aspekty budou diskutovány kvalitativně; následující odstavce tuto diskusi poskytují.
+
+Z~hlediska výpočetní náročnosti trvalo trénování všech jedenácti modelů přibližně 23{,}5~hodiny na pracovní stanici s~procesorem Intel Core i7 a~16~GB~RAM, přičemž většina času připadla na neuronové sítě. Metody klasického strojového učení a~statistické přístupy (izolační les, PCA, K-means, prahování, ensemble) se trénují řádově v~minutách, protože nevyžadují iterativní optimalizaci vah. Pro organizace s~omezenými výpočetními zdroji nebo potřebou častého přetrénování (například při adaptaci na nový provoz) představuje tento rozdíl praktické omezení nasazení metod hlubokého učení.
+
+Latence při klasifikaci se liší v~závislosti na architektuře. CNN zpracovává jednotlivé toky nezávisle, takže klasifikace nového toku nevyžaduje čekání na akumulaci okna. Sekvenční modely (LSTM, GRU, Transformer) naproti tomu vyžadují posuvné okno 16~toků, což přidává zpoždění a~komplikuje nasazení v~prostředí s~požadavkem na klasifikaci v~reálném čase. Metody klasického strojového učení a~statistické přístupy mají zanedbatelnou klasifikační latenci.
+
+Interpretovatelnost výstupů je další dimenzí, která ovlivňuje využitelnost detektoru v~bezpečnostních operacích. PCA umožňuje rozložit rekonstrukční chybu na příspěvky jednotlivých příznaků, čímž operátor získá informaci o~tom, které charakteristiky toku jsou neobvyklé. Izolační les identifikuje příznaky, na nichž byl anomální tok izolován. Neuronové sítě jsou v~tomto ohledu netransparentní -- bez dodatečných technik vysvětlitelné AI (XAI) nelze určit, proč model tok klasifikoval jako anomální. \textcite{Capuano2022} přitom upozorňují, že nasazení XAI v~bezpečnostním kontextu přináší riziko: transparentnost modelu může útočníkům poskytnout informace k~obcházení detekce. Téma T4 tematické analýzy (sekce~\ref{sec:ta-temata}) tyto provozní aspekty identifikovalo jako nedostatečně reflektované v~literatuře; prezentovaná diskuse tento deficit částečně zaplňuje na konkrétních experimentálních datech.
+
+\subsection{Fenomén invertovaného ROC-AUC}
+\label{sec:diskuse-roc}
+
+Hodnoty ROC-AUC metod klasického strojového učení a~statistických přístupů pod~0{,}5 (izolační les 0{,}31; K-means 0{,}38; ensemble 0{,}43; prahování 0{,}42) byly popsány v~sekci~\ref{sec:graficke-vystupy}. Z~hlediska nasazení má tento jev praktický důsledek: spojitá skóre anomálie těchto modelů nelze přímo použít pro prioritizaci poplachů. Operátor SOC potřebuje nejen binární rozhodnutí (anomální / normální), ale i~řazení podezřelých toků podle míry podezřelosti, aby mohl efektivně alokovat čas na analýzu nejvážnějších incidentů.
+
+Modely s~učitelem tento problém nemají -- sigmoidální výstup neuronových sítí přímo reprezentuje pravděpodobnost anomálie a~ROC-AUC přesahuje 0{,}97 u~všech čtyř modelů. CNN s~ROC-AUC $= 0{,}98$ a~PR-AUC $= 0{,}99$ poskytuje spojité skóre s~korektní orientací a~vysokou rozlišovací schopností v~celém rozsahu prahů. Pro organizace, které potřebují prioritizovanou frontu poplachů (nikoli pouze binární klasifikaci), představují modely s~učitelem jedinou spolehlivou volbu z~testovaných metod.
+
+Invertované ROC-AUC metod klasického strojového učení a~statistických přístupů pravděpodobně souvisí s~konvencí vnitřních skóre (izolační les například přiřazuje anomáliím kratší průměrnou cestu ke~kořeni stromu, tj.~nižší číselné skóre) a~s~interakcí mezi vysokou prevalencí anomálií v~datové sadě a~transformací skóre na~pravděpodobnostní škálu. Při nižší prevalenci anomálií by se orientace skóre mohla změnit, což podtrhuje závislost výsledků na charakteristikách datové sady diskutovanou v~sekci~\ref{sec:omezeni-vysledku}.
+
+\section{Typové situace pro volbu detekční metody}
+\label{sec:identifikace-situaci}
+
+Tato sekce přímo naplňuje druhou část dílčího cíle~5 -- identifikovat situace, ve~kterých je použití hlubokého učení přínosné. Na základě výsledků v~tabulce~\ref{tab:metriky-vsechny}, grafických výstupů a~statistických testů v~předchozí sekci lze identifikovat tři typové situace:
+
+\begin{enumerate}
+\item Dostupná anotovaná data a~požadavek na vysokou úplnost i~přesnost:
+
+V~tomto případě je nasazení modelů hlubokého učení s~učitelem (CNN, Transformer) jednoznačně přínosné. CNN dosáhl F1 $= 0{,}94$ oproti nejlepšímu modelu klasického strojového učení (PCA, F1 $= 0{,}61$) -- absolutní rozdíl 33~procentních bodů. Pro bezpečnostní operace, kde je kritická úplnost, představuje nárůst z~$\text{R} = 0{,}59$ (PCA) na $\text{R} = 0{,}94$ (CNN) zachycení dalších přibližně 11\,600 anomálních toků z~33\,121.
+
+\item Omezené výpočetní zdroje nebo požadavek na interpretovatelnost:
+
+PCA a~ensemble zůstávají relevantní jako interpretovatelné alternativy. PCA model je transparentní (rekonstrukční chyba ve vysvětlitelném podprostoru), vyžaduje minimální výpočetní zdroje a~dosahuje nejlepšího F1 mezi metodami klasického strojového učení. V~prostředích bez GPU nebo tam, kde je nutné zdůvodnit každý poplach operátorovi, může PCA představovat přijatelný kompromis. Statistické metody (prahování) jsou naopak vhodné pouze jako první filtrační vrstva díky extrémně nízké úplnosti.
+
+\item Absence anotovaných dat (režim bez učitele):
+
+V~tomto scénáři jsou metody hlubokého a~klasického strojového učení výkonnostně srovnatelné: autoencoder ($\text{F1} = 0{,}37$) vs.\ PCA ($\text{F1} = 0{,}61$). PCA paradoxně překonává autoencoder, pravděpodobně proto, že lineární rekonstrukce lépe odráží strukturu kanonických příznaků než nelineární transformace autoencoderu s~nízkou kontaminací. Při učení bez učitele tedy nasazení metody hlubokého učení nepřináší přidanou hodnotu, metoda klasického strojového učení je preferovaná.
+\end{enumerate}
+
+\section{Omezení interpretace výsledků}
+\label{sec:omezeni-vysledku}
+
+Tato sekce navazuje na hrozby validity identifikované v~sekci~\ref{sec:hrozby-validity} a~konkretizuje jejich dopad na získané výsledky. Podstatná je zde hrozba externí validity~-- experiment byl proveden na jedné datové sadě.
+
+Mapování UNSW-NB15 do kanonického schématu je přibližné (viz tabulka~\ref{tab:feature-mapping} v~sekci~\ref{sec:kanonicke-schema}); absolutní hodnoty metrik proto nelze bez dalšího zpracování vztahovat na čistě HTTPS metadata v~produkční síti. Výsledky slouží primárně k~relativnímu srovnání implementovaných detektorů v~rámci stejného postupu zpracování.
+
+Vysoký podíl anomálií (64\,\%) v~datové sadě neodpovídá typickému produkčnímu provozu, kde anomálie tvoří řádově promile toků. Při nasazení na data s~nižší prevalencí by se zvýšil podíl falešných pozitiv a~snížila pozitivní prediktivní hodnota (PPV), zejména u~metod bez učitele. Modely s~učitelem by v~takovém případě potřebovaly přetrénování na reprezentativních datech. Vysoká prevalence anomálií rovněž ovlivňuje nastavení parametru kontaminace u~metod bez učitele (viz sekce~\ref{sec:predzpracovani} a~\ref{sec:tradicni-algoritmy}), která byla v~tomto experimentu záměrně nastavena na~0{,}5--0{,}6; při nižší prevalenci by výchozí hodnoty kontaminace (typicky~0{,}1) mohly být přiměřenější.
+
+Rozsah pokrytých scénářů je omezen na kategorie útoků obsažené v~UNSW-NB15 (devět typů), které nelze považovat za vyčerpávající reprezentaci současných kybernetických hrozeb. Datová sada neobsahuje například moderní varianty ransomwaru komunikujícího přes TLS ani útoky typu domain fronting (viz taxonomie v~sekci~\ref{sec:taxonomie-utoku}), jejichž detekce na úrovni toků je otevřeným problémem \parencite{Ferdous2023}.
+
+Hodnoty ROC-AUC metod klasického strojového učení pod~0{,}5 (viz sekce~\ref{sec:graficke-vystupy}) naznačují, že spojitá skóre anomálií těchto modelů nemají na dané datové sadě korektní orientaci. Tento jev omezuje možnost použít metody klasického strojového učení bez učitele pro prahově nezávislé hodnocení rizika, přestože jejich binární klasifikační výkon (po nastavení prahu kontaminací) je přijatelný.
+
+Výkonnost všech modelů závisí na kvalitě a~reprezentativnosti trénovacích dat. V~reálném prostředí se statistické vlastnosti provozu mění v~čase (concept drift, viz sekce~\ref{sec:rezimy-uceni}), což může vést k~postupné degradaci přesnosti modelů trénovaných na statické datové sadě \parencite{Qing2025}. Experiment v~této práci tento jev nezachycuje, protože trénovací i~validační data pocházejí ze stejného sběru; ověření robustnosti vůči posunu distribucí by vyžadovalo časovou řadu měření nebo simulaci driftu. Syntetické prostředí popsané v~sekci~\ref{sec:exp-prostredi} by v~budoucnu mohlo sloužit jako základ pro generování provozu s~postupně se měnícími charakteristikami, pokud bude rozšířeno o~generátor s~realistickými paketovými statistikami (viz sekce~\ref{sec:omezeni-synteticke}).

@@ -1,0 +1,31 @@
+\chapter{Dokumentace využití nástrojů AI}
+\label{app:ai-usage}
+
+V~souladu s~prohlášením k~využití AI jsou v~této příloze dokumentovány konkrétní způsoby, rozsah a~části práce, ve~kterých byly nástroje umělé inteligence použity.
+
+\section*{Zlepšení gramatiky a jazykového stylu}
+
+\begin{description}
+\item[Nástroj:] Cursor \parencite{Cursor2026} s~jazykovým modelem Claude 4.6 Opus \parencite{Anthropic2025}
+\item[Části práce:] Celý text diplomové práce (úvod, kapitoly~\ref{chap:reserse}--\ref{chap:vysledky}, závěr)
+\item[Rozsah:] Stylistické korekce dílčích vět a~odstavců -- oprava gramatických chyb, hledání správných překladů odborných termínů do češtiny, úprava interpunkce a~formulací pro akademický styl. Nejednalo se o~přepisování celých pasáží; nástroj byl použit jako pokročilá kontrola pravopisu a~stylu.
+\item[Vlastní přínos:] Veškerý odborný obsah, struktura argumentace, volba a~kritické zhodnocení citovaných zdrojů a~závěry jsou vlastním dílem. Výsledné znění každého odstavce bylo zkontrolováno a~v~případě potřeby upraveno.
+\end{description}
+
+\section*{Shrnutí literatury}
+
+\begin{description}
+\item[Nástroj:] Perplexity \parencite{Perplexity2026} s~jazykovým modelem Claude 4.6 Sonnet \parencite{Anthropic2025}
+\item[Části práce:] Rešerše (kapitola~\ref{chap:reserse})
+\item[Rozsah:] Stručná sumarizace obsahu nalezených zdrojů jako podklad pro vlastní zpracování. Vyhledávání zdrojů bylo provedeno samostatně v~databázích IEEE Xplore, SpringerLink, ACM Digital Library a~Google Scholar; nástroj AI byl využit pouze ke shrnutí obsahu již identifikovaných publikací.
+\item[Vlastní přínos:] Vyhledání a~výběr konečné sady zdrojů, jejich kritické zhodnocení, provedení tematické analýzy podle \textcite{Braun2006}, syntéza závěrů a~propojení poznatků s~návrhem experimentu byly provedeny samostatně. Všechny citace byly ověřeny vůči původním publikacím.
+\end{description}
+
+\section*{Generování části zdrojových kódů}
+
+\begin{description}
+\item[Nástroj:] Cursor \parencite{Cursor2026} s~jazykovým modelem Claude 4.6 Opus \parencite{Anthropic2025}
+\item[Části práce:] Zdrojový kód detekčního systému a~experimentálního prostředí
+\item[Rozsah:] Generování pomocných skriptů, testů, vizualizací a~pipeline pro sestavení balíčku. Nástroj byl využit k~urychlení implementace dílčích komponent; výsledný kód byl vždy zkontrolován a~upraven.
+\item[Vlastní přínos:] Celková architektura systému (společné rozhraní detektorů, registr modelů, kanonické schéma příznaků), volba algoritmů a~jejich hyperparametrů, návrh experimentálního protokolu včetně volby metrik a~statistických testů, rozhodnutí o~přechodu ze syntetického prostředí na srovnávací data, interpretace výsledků a~formulace závěrů jsou vlastním dílem. Konkrétně: definice společného návrh kanonického schématu 17~příznaků pro normalizaci datových sad, design dvouúrovňového experimentálního prostředí, konfigurace křížové validace a~volba Wilcoxonova testu pro párové srovnání. Veškerý vygenerovaný kód byl zkontrolován, testován a~v~řadě případů přepracován.
+\end{description}

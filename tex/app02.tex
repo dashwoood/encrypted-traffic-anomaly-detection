@@ -1,0 +1,31 @@
+\chapter{Obsah přiloženého repozitáře}
+\label{app:repository}
+
+Zdrojové kódy, konfigurační soubory, experimentální skripty a~výsledky experimentu jsou součástí přiloženého repozitáře. Struktura repozitáře je popsána v~tabulce~\ref{tab:struktura-repozitare} v~kapitole~\ref{chap:metodika}; zde je uveden přehled hlavních komponent a~způsob reprodukce experimentu.
+
+\section*{Hlavní komponenty}
+
+\begin{description}
+\item[\texttt{detection-mechanisms/}] Hlavní Python balíček obsahující implementaci všech jedenácti detektorů ze tří skupin (hluboké učení, klasické strojové učení, statistické), evaluační metriky, statistické testy a~vizualizace.
+\item[\texttt{testing-environment/}] Kontejnerové testovací prostředí -- generátor syntetického provozu, přijímač a~agregátor toků, přehrávač srovnávacích dat.
+\item[\texttt{experiments/}] Řízení experimentálního běhu (\texttt{run\_experiment.py}), výstupní metriky a~grafy v~\texttt{results/}.
+\item[\texttt{tex/}] Zdrojové texty diplomové práce v~\LaTeX{u}.
+\item[\texttt{Makefile}] Automatizace úloh \texttt{make} příkazy \texttt{install-all}, \texttt{prepare-data}, \texttt{evaluate-all}.
+\end{description}
+
+\section*{Reprodukce experimentu}
+
+\begin{enumerate}
+\item \texttt{make install-all} -- instalace závislostí.
+\item \texttt{make prepare-data} -- stažení a~normalizace UNSW-NB15.
+\item \texttt{make evaluate-all} -- spuštění experimentu pro všech 11~modelů včetně křížové validace.
+\end{enumerate}
+
+Iniciální hodnoty generátorů jsou fixovány na~42; výsledky jsou reprodukovatelné na shodné konfiguraci (Python~3.10, Linux).
+
+\section*{Veřejné úložiště}
+
+Zdrojové kódy, \LaTeX{} text práce i~experimentální data jsou veřejně dostupné na:
+\begin{center}
+\url{https://github.com/dashwoood/diploma}
+\end{center}

@@ -1,0 +1,78 @@
+\chapter*{Úvod}
+\addcontentsline{toc}{chapter}{Úvod}
+
+\section*{Vymezení tématu práce a důvod výběru tématu}
+\addcontentsline{toc}{section}{Vymezení tématu práce a důvod výběru tématu}
+
+S~rostoucím využíváním digitálních služeb a~síťové komunikace narůstá počet i~sofistikovanost kybernetických hrozeb, které ohrožují data a~IT infrastrukturu organizací, a~následně i~jejich zisk a~reputaci. Ochrana systémů ICT proto vyžaduje nejen hardwarová a~softwarová opatření, ale také vhodné procesy a~techniky detekce bezpečnostních incidentů, jako jsou například systémy detekce průniku (IDS), aby byla organizace i~v~případě úspěšného útoku (nebo jeho části) včas informována a~začala situaci napravovat.
+
+Podíl šifrovaných HTTPS relací na celosvětovém webovém provozu vzrostl z~přibližně 48\,\% v~roce 2013 na 95\,\% v~roce 2022 \parencite{GoogleHTTPS2022}. Tento trend je z~mnoha pohledů pozitivní, ale také negativní: protokoly jako TLS a~různé VPN sice chrání soukromí uživatelů a~firemní data, ale zároveň komplikují tradiční metody detekce založené na analýze obsahu paketů. Útočníci této situace aktivně využívají -- provádějí skryté útoky, exfiltraci dat a~vytvářejí skryté komunikační kanály \parencite{Barut2020}. Studie ukazují, že v~roce 2022 se 85\,\% útoků uskutečnilo přes šifrované kanály \parencite{Zscaler2022}. V~současné situaci je proto nezbytné používat metody detekce, které nepotřebují znát obsah, ale vystačí si se základními údaji o~struktuře dat a~časovými údaji o~dynamice provozu. Z~tohoto důvodu moderní přístupy analýzy síťového provozu využívají strojové učení a~umělou inteligenci k~odhalování anomálií na základě metadat a~statistických vlastností síťových toků bez nutnosti dešifrování, čímž zachovávají soukromí uživatelů.
+
+\section*{Vymezení problému}
+\addcontentsline{toc}{section}{Vymezení problému}
+
+Jak již bylo zmíněno výše, rostoucí míra šifrování síťové komunikace mimo jiné způsobuje, že tradiční metody detekce kybernetických hrozeb založené na analýze obsahu paketů postupně ztrácejí účinnost. Současný výzkum ukazuje, že tradiční modely využívající hloubkovou inspekci paketů (DPI) se staly v~prostředí šifrovaných komunikačních protokolů, jako je TLS, fakticky nepoužitelné -- bez přístupu k~obsahu přenášených dat jsou bezpečnostní nástroje výrazně omezeny v~možnosti odhalit škodlivé aktivity, konkrétně mají méně informací na vstupu \parencite{Papadogiannaki2022}.
+
+Detekce kybernetických hrozeb skrze hledání anomálií v~šifrovaném provozu je odpovědí na nepřístupnost obsahu paketů a zároveň otevřenou vědeckou výzvou, která vyžaduje nové přístupy využívající metody umělé inteligence a~analýzu statistických charakteristik provozu místo obsahové inspekce. Výzkumy potvrzují, že metody strojového a~hlubokého učení dokážou za těchto podmínek efektivně detekovat anomální provoz \parencite{Almuhammadi2025}. Klasifikace šifrovaného provozu na anomální a neanomální se tak stala v~současnosti kritickou součástí moderního síťového managementu a~cloudových bezpečnostních služeb, která zároveň prochází velmi dynamickým vývojem jak v akademické, tak soukromé sféře.
+
+Problém spočívá v~nalezení \emph{efektivních} metod detekce anomálií v~šifrované komunikaci, které umožní odhalovat hrozby bez narušení soukromí uživatelů, a~zároveň v~posouzení, zda je využití na zdroje náročnějších metod umělé inteligence, jako jsou metody hlubokého učení, nutné a~vhodné pro konkrétní případy.
+
+Cílovou skupinou, která má z~vyřešení problému užitek, jsou především provozovatelé podnikových sítí a~bezpečnostní týmy, například operátoři SOC, kteří potřebují efektivně monitorovat provoz bez dešifrování komunikace, a~koncoví uživatelé, jejichž komunikace zůstává šifrovaná, a~proto lépe chráněná.
+
+\section*{Cíle práce}
+\addcontentsline{toc}{section}{Cíle práce}
+
+Hlavním cílem diplomové práce je navrhnout a implementovat systém pro detekci anomálií v~šifrované síťové komunikaci s využitím metod umělé inteligence a systematicky porovnat tři skupiny detekčních metod v~experimentálním prostředí.
+
+Detekční metody jsou pro účely práce a experimentů v ní rozděleny do tří skupin podle principu učení, výpočetních nároků a~interpretovatelnosti na \emph{hluboké učení} s~modely založenými na vícevrstvých neuronových sítích s~automatickou extrakcí příznaků, \emph{klasické strojové učení} s~algoritmy učícími se z~dat bez hlubokých reprezentací a na \emph{statistické a~heuristické metody} zahrnující přístupy jako jsou kombinace detektorů, pevná pravidla či testy statistického rozdělení.
+
+Dílčí cíle:
+\begin{enumerate}
+\item Identifikovat a~analyzovat aktuální metody hlubokého učení, klasického strojového učení a~statistické metody vhodné pro detekci anomálií v~šifrovaném provozu na základě rešerše literatury.
+\item Navrhnout experimentální prostředí umožňující sběr, generování a~validaci dat síťových toků pro testování detekčních metod.
+\item Implementovat prototyp detekčního systému využívajícího vybrané algoritmy ze všech tří skupin.
+\item Vyhodnotit účinnost implementovaných přístupů na připravených datech pomocí standardních metrik: přesnost, úplnost, F1 skóre a~ROC křivka; u~detekce bezpečnostních událostí má úplnost zpravidla větší váhu než přesnost.
+\item Systematicky porovnat efektivitu tří skupin metod a~identifikovat situace, ve~kterých je použití hlubokého učení přínosné.
+\end{enumerate}
+
+Součástí práce je kontrolovaný experiment srovnávající tři skupiny metod na shodné datové sadě, proto je formulována následující hypotéza práce:
+
+\begin{quote}
+\textbf{Hypotéza:} Metody hlubokého učení dosahují vyššího F1~skóre při detekci anomálií v~šifrovaném provozu než metody klasického strojového učení i~statistické/heuristické metody.
+\end{quote}
+
+\noindent Hypotéza je v~sekci~\ref{sec:stat-testovani} převedena do dvoustupňového statistického postupu (Kruskal--Wallisův omnibus test následovaný jednostrannými post-hoc Wilcoxonovými testy s~Bonferroniho korekcí) a~její ověření je prezentováno v~kapitole~\ref{chap:vysledky}.
+
+\section*{Metody dosažení cíle}
+\addcontentsline{toc}{section}{Metody dosažení cíle}
+
+Pro dosažení hlavního cíle práce je využita výzkumná strategie Design Science Research \parencite{Peffers2007}, která poskytuje rámec pro systematický návrh, implementaci a~validaci artefaktů v~oblasti informačních technologií. Konkrétní metody jsou mapovány na dílčí cíle následovně:
+
+\begin{enumerate}
+\item Na základě systematické rešerše literatury jsou identifikovány a~analyzovány metody hlubokého učení, klasického strojového učení a~statistické metody vhodné pro detekci anomálií v~šifrovaném provozu. Výsledky rešerše jsou shrnuty pomocí tematické analýzy \parencite{Braun2006}, která umožňuje kategorizaci přístupů podle typu metody, oblasti aplikace a~dosažených výsledků.
+\item Je navrženo experimentální prostředí zahrnující definici architektury pro sběr a~reprodukovatelné přehrávání síťových toků, konfiguraci scénářů provozu a~výběr nástrojů pro zachytávání metadat. Pro experimenty jsou primárně využity veřejně dostupné datové sady šifrovaného provozu, případně doplněné synteticky generovanými daty.
+\item Je implementován softwarový prototyp detekčního systému zahrnující předzpracování dat, trénování modelů a~integraci do testovacího prostředí.
+\item Výkonnost implementovaných přístupů je vyhodnocena pomocí standardních metrik detekce anomálií. Dosažené výsledky jsou shrnuty popisnou statistikou (průměr, medián, rozptyl) a rozdíly ve výkonnosti mezi skupinami modelů jsou ověřeny statistickými testy významnosti.
+\item Výsledky tří skupin metod jsou systematicky porovnány na shodných datových sadách pomocí kontrolovaného experimentu \parencite{Wohlin2012}, který umožňuje identifikaci situací, ve~kterých je použití hlubokého učení přínosné.
+\end{enumerate}
+
+\section*{Předpoklady a~omezení práce}
+\addcontentsline{toc}{section}{Předpoklady a~omezení práce}
+
+Hlavním omezením je dostupnost a~kvalita datových sad pro trénování a~testování modelů detekce anomálií: veřejně dostupné datové sady šifrovaného provozu nemusí plně pokrývat aktuální typy útoků a~různorodost reálných síťových prostředí, a~synteticky generovaná data nemusí zachytit komplexitu běžného provozu.
+
+Dalším omezením je rozsah pokrytých scénářů, který je omezen na vybrané typy anomálií a~útoků; výsledky proto nelze bez dalšího ověření zobecnit na všechny varianty útoků v~šifrovaném provozu.
+
+Validita a~generalizovatelnost výsledků jsou ovlivněny experimentálními podmínkami. Závěry získané v~testovacím prostředí nemusí plně odpovídat chování modelů v~reálných heterogenních sítích s~proměnlivými charakteristikami provozu \parencite{Qing2025}. Výkonnost modelů rovněž závisí na kvalitě, reprezentativnosti a~vyvážení trénovacích dat, což může ovlivnit schopnost detekovat méně časté typy anomálií.
+
+\section*{Přínosy práce}
+\addcontentsline{toc}{section}{Přínosy práce}
+
+Diplomová práce přispívá k~rozvoji poznání v~oblasti kybernetické bezpečnosti systematickou analýzou a~srovnáním tří skupin detekčních metod pro detekci anomálií v~šifrované síťové komunikaci. Rešerše a~identifikace aktuálních metod poskytují ucelený přehled dostupných technik a~jejich vhodnosti pro analýzu šifrovaného provozu bez narušení soukromí uživatelů. Experimentální prostředí vytvořené v~rámci práce umožňuje reprodukovatelné testování detekčních metod na datech síťových toků a~může sloužit jako základ pro další výzkum.
+
+Funkční prototyp detekčního systému implementující vybrané metody ze všech tří skupin může být po úpravách integrován do bezpečnostních nástrojů typu IDS/IPS. Systematické srovnání pomocí standardních metrik, zejména úplnosti, která je kritická pro minimalizaci falešně negativních detekcí, a~identifikace konkrétních situací, kdy je použití hlubokého učení oproti ostatním algoritmickým skupinám přínosné, umožní bezpečnostním týmům informovaně volit vhodné technologie.
+
+\section*{Struktura práce}
+\addcontentsline{toc}{section}{Struktura práce}
+
+Práce sleduje strategii Design Science Research \parencite{Peffers2007} a~je členěna do tří hlavních kapitol doplněných úvodem a~závěrem. Kapitola~\ref{chap:reserse} (Rešerše) analyzuje aktuální šifrovací protokoly, taxonomii útoků zneužívajících šifrované kanály, metody hlubokého učení, klasického strojového učení a~statistické přístupy k~detekci anomálií; závěrem provádí tematickou analýzu identifikovaných zdrojů. Kapitola~\ref{chap:metodika} (Metodika) popisuje výzkumný rámec Design Science Research, experimentální prostředí, datové sady, implementaci prototypu a~návrh kontrolovaného experimentu včetně statistických testů. Kapitola~\ref{chap:vysledky} (Výsledky) prezentuje metriky detekce (souhrnná tabulka~\ref{tab:metriky-vsechny}), grafické výstupy, systematické srovnání tří skupin metod, diskusi zasazující zjištění do kontextu literatury a~provozních aspektů a~identifikaci situací vhodných pro nasazení hlubokého učení.

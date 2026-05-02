@@ -1,0 +1,19 @@
+{
+  "precision": 0.8092,
+  "recall": 0.2356,
+  "f1": 0.365,
+  "accuracy": 0.473,
+  "fpr": 0.0999,
+  "fnr": 0.7644,
+  "tp": 7804,
+  "fp": 1840,
+  "fn": 25317,
+  "tn": 16573,
+  "n_flows": 51534,
+  "n_anomalies_true": 33121,
+  "n_anomalies_pred": 9644,
+  "roc_auc": 0.5313,
+  "pr_auc": 0.7256,
+  "model": "autoencoder",
+  "flows_file": "train=data/datasets/canonical_train.csv test=data/datasets/canonical_val.csv"
+}

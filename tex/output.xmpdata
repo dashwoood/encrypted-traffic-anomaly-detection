@@ -1,0 +1,7 @@
+% Stejné údaje jako v prace.xmpdata. Overleaf často používá -jobname=output; pdfx pak hledá output.xmpdata.
+
+\Author{Aleksandra Parkhomenko}
+\Title{Detekce anomálií v šifrované komunikaci pomocí AI}
+\Keywords{detekce anomálií, šifrovaná komunikace, umělá inteligence, strojové učení, síťová bezpečnost, TLS, IDS}
+\Subject{Tato diplomová práce se zabývá detekcí anomálií v šifrované síťové komunikaci a systematickým srovnáním tří skupin detekčních metod: hlubokého učení, klasického strojového učení a statistických/heuristických přístupů. Práce analyzuje aktuální metody ze všech tří skupin, navrhuje experimentální prostředí pro sběr a validaci dat síťových toků, implementuje prototyp detekčního systému s jedenácti modely a vyhodnocuje jejich účinnost pomocí metrik přesnosti (precision), úplnosti (recall), F1 skóre, celkové přesnosti klasifikace (accuracy) a ROC křivky. Kontrolovaný experiment na datové sadě UNSW-NB15 prokázal statisticky významný rozdíl mezi všemi třemi skupinami (Kruskal--Wallisův test, $p = 0{,}0012$). Konvoluční model (CNN) dosáhl nejvyššího F1 skóre 0,94; modely hlubokého učení s učitelem statisticky významně překonaly klasické ML i statistické metody. V režimu učení bez učitele však metody klasického ML dosáhly srovnatelné výkonnosti s hlubokým učením při nižší výpočetní náročnosti.}
+\Publisher{Vysoká škola ekonomická v Praze, fakulta informatiky a statistiky}

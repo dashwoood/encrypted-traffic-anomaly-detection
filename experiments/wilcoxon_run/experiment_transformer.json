@@ -1,0 +1,20 @@
+{
+  "precision": 0.9433,
+  "recall": 0.8296,
+  "f1": 0.8828,
+  "accuracy": 0.905,
+  "fpr": 0.0378,
+  "fnr": 0.1704,
+  "tp": 18429,
+  "fp": 1108,
+  "fn": 3786,
+  "tn": 28196,
+  "n_flows": 51519,
+  "n_anomalies_true": 22215,
+  "n_anomalies_pred": 19537,
+  "roc_auc": 0.9743,
+  "pr_auc": 0.9513,
+  "model": "transformer",
+  "window_size": 16,
+  "flows_file": "train=data/datasets/canonical_train_ordered.csv test=data/datasets/canonical_val_ordered.csv"
+}

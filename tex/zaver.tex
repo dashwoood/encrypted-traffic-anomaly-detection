@@ -1,0 +1,106 @@
+\chapter*{Závěr}
+\addcontentsline{toc}{chapter}{Závěr}
+
+\section*{Shrnutí práce}
+\addcontentsline{toc}{section}{Shrnutí práce}
+
+Diplomová práce se zabývala detekcí anomálií v~šifrované síťové komunikaci a~systematickým srovnáním tří skupin detekčních metod: hlubokého učení, klasického strojového učení a~statistických/heuristických přístupů. V~rešeršní části (kapitola~\ref{chap:reserse}) bylo analyzováno 18~zdrojů pokrývajících šifrovací protokoly, taxonomii útoků, metody hlubokého učení, klasického strojového učení a~statistické detektory; tematická analýza podle \textcite{Braun2006} identifikovala čtyři průřezová témata, která strukturovala navazující návrh experimentu. V~metodické části (kapitola~\ref{chap:metodika}) bylo v~rámci strategie Design Science Research \parencite{Peffers2007} navrženo dvouúrovňové experimentální prostředí -- syntetický integrační režim pro ověření řetězce zpracování a~reprodukovatelný režim přehrávání srovnávacích dat -- a~implementován prototyp detekčního systému se společným rozhraním pro jedenáct modelů ze tří skupin. Kontrolovaný experiment na datové sadě UNSW-NB15 (kapitola~\ref{chap:vysledky}) prokázal statisticky významný rozdíl ve výkonnosti všech tří skupin a~umožnil identifikovat situace, ve~kterých je nasazení výpočetně náročnějšího hlubokého učení přínosné.
+
+\section*{Shrnutí výstupů vzhledem k cílům práce}
+\addcontentsline{toc}{section}{Shrnutí výstupů vzhledem k cílům práce}
+
+Hlavním cílem práce bylo navrhnout a implementovat systém pro detekci anomálií
+v šifrované síťové komunikaci s využitím metod umělé inteligence a systematicky porovnat tři
+skupiny detekčních metod v experimentálním prostředí. Naplnění hlavního cíle je podloženo splněním pěti dílčích cílů:
+
+\begin{itemize}
+\item Identifikovat a~analyzovat aktuální metody hlubokého učení, klasického strojového učení a~statistické metody vhodné pro detekci anomálií v~šifrovaném provozu na základě rešerše literatury:
+
+Rešerše v~kapitole~\ref{chap:reserse} pokrývá metody hlubokého učení (CNN, LSTM, GRU, Transformer, autoencoder), klasického strojového učení (izolační les, PCA, K-means) i~statistické přístupy (prahování, pravidlové metody) včetně teoretického srovnání. Tematická analýza propojila poznatky z~literatury s~návrhem experimentu.
+
+\item Navrhnout experimentální prostředí umožňující sběr, generování a~validaci dat síťových toků pro testování detekčních metod:
+
+V~sekci~\ref{sec:exp-prostredi} je popsáno dvouúrovňové prostředí: syntetický integrační režim pro ověření řetězce zpracování a~režim přehrávání srovnávacích dat. Původní záměr generovat realistický útočný provoz se ukázal jako rozsáhlý výzkumný problém přesahující rámec práce (viz sekce~\ref{sec:omezeni-synteticke}); místo toho byl implementován reprodukovatelný řetězec zpracování nad veřejnou datovou sadou UNSW-NB15. Tento přechod je obhajitelný, protože srovnání detektorů na shodném příznakovém prostoru zůstává platné a~integrační prostředí je ponecháno jako základ pro budoucí rozšíření.
+
+\item Implementovat prototyp detekčního systému využívajícího vybrané algoritmy ze všech tří skupin metod:
+
+Balíček \texttt{detection-mechanisms} implementuje jedenáct detektorů se společným rozhraním (\texttt{fit}, \texttt{predict}, \texttt{predict\_scores}), registr modelů a~příkazovou utilitu se třemi režimy provozu (sekce~\ref{sec:implementace}). Architektura umožňuje snadné přidávání nových modelů.
+
+\item Vyhodnotit účinnost implementovaných přístupů na připravených datech pomocí standardních metrik: přesnost, úplnost, F1~skóre a~ROC křivka:
+
+Všech jedenáct modelů bylo vyhodnoceno na validační množině s~metrikami přesnost, úplnost, F1, celková přesnost klasifikace, ROC-AUC a~PR-AUC (tabulka~\ref{tab:metriky-vsechny}). Doplňkově byly vygenerovány křivky ROC, PR a~matice záměn.
+
+\item Systematicky porovnat efektivitu tří skupin metod a~identifikovat situace, ve~kterých je použití hlubokého učení přínosné:
+
+Sekce~\ref{sec:srovnani} systematicky porovnává tři skupiny na úrovni skupinových průměrů i~statistických testů; sekce~\ref{sec:identifikace-situaci} identifikuje tři typové situace lišící se dostupností anotovaných dat a~požadavky na interpretovatelnost.
+\end{itemize}
+
+\section*{Ověření hypotézy}
+\addcontentsline{toc}{section}{Ověření hypotézy}
+
+Hypotéza práce zněla: metody hlubokého učení dosahují vyššího F1~skóre při detekci anomálií v~šifrovaném provozu než metody klasického strojového učení i~statistické/heuristické metody. Ověření proběhlo dvoustupňově na deseti opakováních křížové validace (viz sekce~\ref{sec:stat-testovani}). Globální Kruskal--Wallisův test zamítl nulovou hypotézu shodných mediánů F1 ($H = 13{,}42$, $p = 0{,}0012$) na hladině významnosti $\alpha = 0{,}05$. Jednostranné post-hoc Wilcoxonovy testy s~Bonferroniho korekcí potvrdily samotnou hypotézu práce: hluboké učení dosáhlo vyššího F1 než klasické strojové učení ($p_{\mathrm{Bonf}} = 0{,}0146$) i~než statistické/heuristické metody ($p_{\mathrm{Bonf}} = 0{,}0146$). Průměrné F1 hlubokého učení činilo 0{,}737, klasického strojového učení 0{,}491 a~statistických metod 0{,}361; při vyřazení autoencoderu průměr hlubokého učení s~učitelem vzrostl na 0{,}799. Hypotéza byla tedy na zvolené datové sadě UNSW-NB15 podpořena daty, přičemž zobecnění na jiné datové sady a~síťová prostředí vyžaduje další validaci (viz sekce~\ref{sec:omezeni-vysledku}).
+
+\section*{Přínosy práce}
+\addcontentsline{toc}{section}{Přínosy práce}
+
+Práce přináší konkrétní výstupy využitelné jak pro navazující výzkum, tak pro praxi bezpečnostních týmů organizací:
+
+\begin{itemize}
+\item Systematická analýza a~srovnání metod:
+
+Rešerše 18~zdrojů s~tematickou analýzou poskytuje ucelený přehled metod hlubokého učení, klasického strojového učení a~statistických přístupů pro detekci anomálií v~šifrovaném provozu a~jejich vhodnosti pro analýzu bez narušení soukromí uživatelů.
+
+\item Reprodukovatelné experimentální prostředí:
+
+Dvouúrovňové prostředí (syntetický integrační režim a~režim přehrávání srovnávacích dat) s~kanonickým schématem 17~příznaků umožňuje reprodukovatelné testování detekčních metod na datech síťových toků a~může sloužit jako základ pro další výzkum.
+
+\item Funkční prototyp detekčního systému:
+
+Balíček \texttt{detection-mechanisms} se společným rozhraním pro jedenáct modelů demonstruje modulární architekturu, která umožňuje snadné přidávání nových detektorů a~po úpravách může být integrována do bezpečnostních nástrojů typu IDS/IPS.
+
+\item Kvantifikované srovnání s~identifikací rozhodovacích situací:
+
+Kontrolovaný experiment na UNSW-NB15 prokázal statisticky významný rozdíl mezi všemi třemi skupinami metod (Kruskal--Wallisův test, $p = 0{,}0012$; post-hoc párové Wilcoxonovy testy potvrdily rozdíly mezi každou dvojicí) a~identifikoval tři typové situace (sekce~\ref{sec:identifikace-situaci}), v~nichž se doporučení pro volbu metody liší podle dostupnosti anotovaných dat a~požadavků na interpretovatelnost.
+
+\item Praktická doporučení pro bezpečnostní týmy:
+
+Výsledky poskytují provozovatelům podnikových sítí a~SOC týmům podklady pro volbu detekčních technologií: v~režimu s~učitelem dosáhl CNN model F1\,=\,0{,}94, zatímco v~režimu bez učitele metody klasického strojového učení (izolační les, PCA) dosahují srovnatelné výkonnosti s~hlubokým učením při nižší výpočetní náročnosti.
+\end{itemize}
+
+\section*{Omezení a doporučení}
+\addcontentsline{toc}{section}{Omezení a doporučení}
+
+Hlavní omezení experimentu jsou podrobně diskutována v~sekcích~\ref{sec:diskuse} a~\ref{sec:omezeni-vysledku}. Zde jsou shrnuta z~nich ta nejpodstatnější:
+
+\begin{itemize}
+\item Jedna datová sada: experiment byl veden výhradně na UNSW-NB15 s~jednou pevnou iniciální hodnotou generátorů. Zobecnění výsledků na jiné datové sady a~síťová prostředí vyžaduje křížovou validaci.
+
+\item Aproximativní mapování příznaků: kanonické schéma 17~příznaků vzniklo aproximativním mapováním z~UNSW-NB15, která neobsahuje čistě HTTPS provoz. Přímá přenositelnost na moderní TLS~1.3 toky je tím omezena.
+
+\item Nevyvážené zastoupení tříd: podíl anomálií v~experimentální sadě (64\,\%) neodpovídá typickému produkčnímu provozu, kde je podíl anomálií výrazně nižší. Absolutní hodnoty metrik je proto třeba interpretovat s~ohledem na laboratorní charakter experimentu.
+
+\item Neotestovaný concept drift: vliv postupné změny statistických vlastností provozu nebyl experimentálně ověřen; modely byly trénovány a~testovány na statickém snímku dat.
+
+\item Integrační prostředí bez realistických útoků: implementace simulátoru útoků v~syntetickém integračním režimu se nepodařila realizovat v~plném rozsahu (viz sekce~\ref{sec:omezeni-synteticke}), čímž nebylo dosaženo end-to-end validace v~plně kontrolovaném prostředí.
+\end{itemize}
+
+Relativní srovnání detektorů na shodném vstupu nicméně zůstává platné a~výsledky představují spolehlivý základ pro navazující výzkum.
+
+\section*{Možnosti dalšího výzkumu}
+\addcontentsline{toc}{section}{Možnosti dalšího výzkumu}
+
+Navazující výzkum se může ubírat několika směry:
+
+\begin{itemize}
+\item Křížová validace na dalších datových sadách, především CICIDS2017, pro kterou je normalizační skript v~repozitáři připraven, avšak nižší pokrytí kanonického schématu (59\,\%) vyžaduje úpravu příznakového prostoru.
+
+\item Rozšíření syntetického prostředí o~generátor provozu na úrovni paketů s~realistickými statistikami velikostí a~mezipaketových intervalů, čímž by se umožnilo trénování a~validace v~podmínkách bližších produkčnímu nasazení.
+
+\item Testování odolnosti modelů vůči změnám v distribuci dat (concept drift) na časových řadách nebo pomocí uměle vyvolaného driftu – důležité pro ověření použitelnosti v~reálném prostředí, kde se vlastnosti sítě průběžně mění.
+
+\item Zkoumání kombinací detektorů zahrnujících modely hlubokého učení s~metodami klasického strojového učení a~statistickými přístupy, které by mohly nabídnout vyšší robustnost při zachování interpretovatelnosti.
+
+\item Ověření prototypu v~reálném síťovém provozu s~měřením latence a~výpočetní náročnosti, což by doplnilo laboratorní výsledky o~praktickou perspektivu nasaditelnosti.
+\end{itemize}
+
+Výsledky práce potvrzují, že metody hlubokého učení přinášejí v~režimu učení s~učitelem měřitelný přínos pro detekci anomálií v~šifrované komunikaci, avšak jejich nasazení není univerzálně výhodnější než metody klasického strojového učení a~statistické přístupy. Volba detekční metody by měla vycházet z~dostupnosti anotovaných dat, požadavků na interpretovatelnost a~výpočetních zdrojů konkrétního prostředí -- tři typové situace identifikované v~sekci~\ref{sec:identifikace-situaci} poskytují k~tomuto rozhodnutí strukturovaný podklad.

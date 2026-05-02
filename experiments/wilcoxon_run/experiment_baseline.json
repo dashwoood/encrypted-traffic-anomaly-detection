@@ -1,0 +1,19 @@
+{
+  "precision": 0.0,
+  "recall": 0.0,
+  "f1": 0.0,
+  "accuracy": 0.3573,
+  "fpr": 0.0,
+  "fnr": 1.0,
+  "tp": 0,
+  "fp": 0,
+  "fn": 33121,
+  "tn": 18413,
+  "n_flows": 51534,
+  "n_anomalies_true": 33121,
+  "n_anomalies_pred": 0,
+  "roc_auc": null,
+  "pr_auc": null,
+  "model": "baseline",
+  "flows_file": "train=data/datasets/canonical_train.csv test=data/datasets/canonical_val.csv"
+}

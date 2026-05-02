@@ -1,0 +1,46 @@
+# Benchmark testing environment: replay canonical flows (in-distribution for trained models)
+#
+# Use this when validating detectors trained on UNSW-NB15 / CICIDS2017. Data is
+# streamed from the benchmark dataset into flows.csv, so the detector sees
+# the same feature distribution it was trained on.
+#
+# Usage:
+#   make env-up-benchmark
+#   make demo-benchmark
+#
+# Prerequisites: data/datasets/canonical_val.csv (or canonical_train.csv) must exist.
+# Run `make prepare-data` first if needed.
+
+services:
+  flow-replayer:
+    build:
+      context: ./testing-environment/flow-replayer
+      dockerfile: Dockerfile
+    container_name: flow-replayer
+    profiles:
+      - benchmark
+    volumes:
+      - ./data:/data
+    environment:
+      - SOURCE_CSV=/data/datasets/canonical_val.csv
+      - OUTPUT_CSV=/data/logs/flows.csv
+      - DELAY_SEC=0.5
+      - MAX_ROWS=5000
+    command: ["python", "replay_flows.py", "--source", "/data/datasets/canonical_val.csv", "--output", "/data/logs/flows.csv", "--delay", "0.5", "--max-rows", "5000"]
+
+  detector:
+    build:
+      context: ./detection-mechanisms
+      dockerfile: Dockerfile
+    container_name: traffic-detector
+    profiles:
+      - benchmark
+    depends_on:
+      - flow-replayer
+    working_dir: /app
+    command: daemon --flows /data/logs/flows.csv --model isolation_forest --interval 3 --min-fit-flows 100 --log-level INFO
+    volumes:
+      - ./data:/data
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped

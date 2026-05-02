@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "flow-anomaly-detector"
+version = "0.1.0"
+description = "CLI and daemon for anomaly detection in encrypted flow traffic"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "Aleksandra Parkhomenko" }]
+keywords = ["anomaly-detection", "network-security", "encrypted-traffic"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+]
+dependencies = [
+    "scikit-learn>=1.0",
+    "joblib>=1.2",
+    "numpy>=1.22",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "ruff>=0.1"]
+benchmark = ["kaggle>=1.5"]
+smote = ["imbalanced-learn>=0.11"]
+viz = ["matplotlib>=3.6"]
+ai = ["torch>=2.0"]
+all = ["imbalanced-learn>=0.11", "matplotlib>=3.6", "kaggle>=1.5", "torch>=2.0"]
+
+[project.scripts]
+detect = "cli:main"
+
+[tool.setuptools.package-dir]
+"" = "."
+
+[tool.setuptools]
+py-modules = ["cli", "flow_reader", "feature_selection", "evaluation", "statistical_tests", "visualization"]
+packages = ["models", "models.ai", "models.traditional", "datasets"]

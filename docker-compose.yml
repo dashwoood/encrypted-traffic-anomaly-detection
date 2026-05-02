@@ -1,0 +1,55 @@
+services:
+  receiver:
+    build:
+      context: ./testing-environment/receiver
+      dockerfile: Dockerfile
+    container_name: traffic-receiver
+    user: "${UID:-1000}:${GID:-1000}"
+    ports:
+      - "${RECEIVER_PORT:-8000}:8000"
+    volumes:
+      - ./data/logs:/app/logs
+    environment:
+      - RECEIVER_PORT=8000
+      - LOG_PATH=/app/logs/requests.log
+      - FLOWS_PATH=/app/logs/flows.csv
+      - ROLLING_WINDOW_SEC=${ROLLING_WINDOW_SEC:-60}
+      - CAPTURE_PATH=/app/logs/capture.pcap
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000')"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+  generator:
+    build:
+      context: ./testing-environment/generator
+      dockerfile: Dockerfile
+    container_name: traffic-generator
+    depends_on:
+      receiver:
+        condition: service_healthy
+    environment:
+      - RECEIVER_HOST=receiver
+      - RECEIVER_PORT=${RECEIVER_PORT:-8000}
+      - INTERVAL_SEC=${TRAFFIC_INTERVAL_SEC:-2}
+      - ANOMALY_RATE=${ANOMALY_RATE:-0.1}
+
+  detector:
+    build:
+      context: ./detection-mechanisms
+      dockerfile: Dockerfile
+    container_name: traffic-detector
+    depends_on:
+      receiver:
+        condition: service_healthy
+    working_dir: /app
+    command: >
+      sh -c "pip install -e . &&
+             detect daemon --flows /data/flows.csv --model isolation_forest --interval 5 --min-fit-flows 50"
+    volumes:
+      - ./data/logs:/data
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped

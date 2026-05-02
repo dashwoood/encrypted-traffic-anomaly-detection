@@ -1,0 +1,7 @@
+# Python 3.9+
+scikit-learn>=1.0
+joblib>=1.2
+
+# Optional: for benchmark dataset download (detect train)
+# Configure ~/.kaggle/kaggle.json from Kaggle → Create New Token
+kaggle>=1.5

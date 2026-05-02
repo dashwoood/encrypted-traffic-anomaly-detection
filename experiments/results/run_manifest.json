@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "created_at_utc": "2026-03-13T10:58:55.702376+00:00",
+  "started_at_utc": "2026-03-12T11:29:38.024883+00:00",
+  "duration_seconds": 84557.677493,
+  "command": "experiments/run_experiment.py --train data/datasets/canonical_train.csv --test data/datasets/canonical_val.csv --train-ordered data/datasets/canonical_train_ordered.csv --test-ordered data/datasets/canonical_val_ordered.csv --all --output experiments/results --window-size 16 --seed 42 --run-manifest experiments/results/run_manifest.json",
+  "project_root": "/home/dashwood/diploma/remote/diploma",
+  "results_dir": "/home/dashwood/diploma/remote/diploma/experiments/results",
+  "python": {
+    "version": "3.10.12 (main, Mar  3 2026, 11:56:32) [GCC 11.4.0]",
+    "executable": "/usr/bin/python3"
+  },
+  "platform": {
+    "system": "Linux",
+    "release": "6.6.87.2-microsoft-standard-WSL2",
+    "machine": "x86_64"
+  },
+  "environment": {
+    "PYTHONHASHSEED": "42"
+  },
+  "data": {
+    "train": {
+      "path": "/home/dashwood/diploma/remote/diploma/data/datasets/canonical_train.csv",
+      "exists": true,
+      "size_bytes": 19868255,
+      "checksum_sha256": "5cf554f1c84cff541f7a1c7ef3ac3f64e1287cc0f3b630e086790c263a02b750"
+    },
+    "test": {
+      "path": "/home/dashwood/diploma/remote/diploma/data/datasets/canonical_val.csv",
+      "exists": true,
+      "size_bytes": 4965141,
+      "checksum_sha256": "81012cd256bb27b848d3b6d8c9998c37d1d2fc5890c31212008185b6ff3e756e"
+    },
+    "train_ordered": {
+      "path": "/home/dashwood/diploma/remote/diploma/data/datasets/canonical_train_ordered.csv",
+      "exists": true,
+      "size_bytes": 19816811,
+      "checksum_sha256": "889745ce1376a7f910f6c966e5d20f43534c04bbfe405d389a4c0c9605dcec7b"
+    },
+    "test_ordered": {
+      "path": "/home/dashwood/diploma/remote/diploma/data/datasets/canonical_val_ordered.csv",
+      "exists": true,
+      "size_bytes": 5016585,
+      "checksum_sha256": "47941e06ac8ab379658297bbb367cb552a8ebd5cd0b095e88c557ecc22e2937e"
+    }
+  },
+  "run_config": {
+    "seed": 42,
+    "max_train_samples": null,
+    "window_size": 16,
+    "cv_folds": 0,
+    "models": [
+      "baseline",
+      "isolation_forest",
+      "pca",
+      "kmeans",
+      "threshold",
+      "ensemble",
+      "autoencoder",
+      "cnn",
+      "lstm",
+      "gru",
+      "transformer"
+    ],
+    "all": true,
+    "traditional": false,
+    "ai": false
+  },
+  "artifacts": {
+    "experiment_files": [
+      "experiment_autoencoder.json",
+      "experiment_autoencoder_full.json",
+      "experiment_baseline.json",
+      "experiment_baseline_full.json",
+      "experiment_cnn.json",
+      "experiment_cnn_full.json",
+      "experiment_ensemble.json",
+      "experiment_ensemble_full.json",
+      "experiment_gru.json",
+      "experiment_gru_full.json",
+      "experiment_isolation_forest.json",
+      "experiment_isolation_forest_full.json",
+      "experiment_kmeans.json",
+      "experiment_kmeans_full.json",
+      "experiment_lstm.json",
+      "experiment_lstm_full.json",
+      "experiment_pca.json",
+      "experiment_pca_full.json",
+      "experiment_summary.json",
+      "experiment_threshold.json",
+      "experiment_threshold_full.json",
+      "experiment_transformer.json",
+      "experiment_transformer_full.json"
+    ],
+    "cv_files": [
+      "cv_cnn.json",
+      "cv_gru.json",
+      "cv_lstm.json",
+      "cv_summary.json",
+      "cv_transformer.json"
+    ],
+    "summary_files": [
+      "cv_summary.json",
+      "experiment_summary.json"
+    ],
+    "statistical_comparison": "statistical_comparison.json",
+    "prior_run_manifest": "/home/dashwood/diploma/remote/diploma/experiments/results/run_manifest.json",
+    "figures": [
+      "figures/confusion_matrices.png",
+      "figures/metric_comparison.png",
+      "figures/pr_curves.png",
+      "figures/roc_curves.png"
+    ]
+  }
+}

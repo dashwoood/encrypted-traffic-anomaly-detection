@@ -1,0 +1,72 @@
+\documentclass[11pt,a4paper]{report}
+\usepackage[top=25mm,bottom=25mm,right=25mm,left=30mm,head=12.5mm,foot=12.5mm]{geometry}
+\let\openright=\clearpage
+
+\input{makra}
+
+\def\NazevPrace{Detekce anomálií v šifrované komunikaci pomocí AI}
+
+\def\TypPrace{DIPLOMOVÁ PRÁCE}
+
+\def\AutorPrace{Aleksandra Parkhomenko}
+
+\def\DatumOdevzdani{květen 2026}
+
+\def\Vedouci{prof. RNDr. Jiří Ivánek, CSc.}
+
+\def\StudijniProgram{Podniková informatika}
+
+\def\Prohlaseni{Prohlašuji, že jsem diplomovou práci \textit{\NazevPrace} vypracovala samostatně za použití v práci uvedených pramenů a literatury.}
+
+\def\Podekovani{%
+Ráda bych poděkovala vedoucímu práce, prof.~RNDr.~Jiřímu Ivánkovi, CSc., za odborné vedení, cenné připomínky a~vstřícný přístup při zpracování diplomové práce.
+}
+
+\def\Abstrakt{%
+Tato diplomová práce se zabývá detekcí anomálií v~šifrované síťové komunikaci a~systematickým srovnáním tří skupin detekčních metod: hlubokého učení, klasického strojového učení a~statistických/heuristických přístupů. Práce analyzuje aktuální metody ze všech tří skupin, navrhuje experimentální prostředí pro sběr a~validaci dat síťových toků, implementuje prototyp detekčního systému s~jedenácti modely a~vyhodnocuje jejich účinnost pomocí metrik přesnosti (precision), úplnosti (recall), F1~skóre, celkové přesnosti klasifikace (accuracy) a~ROC křivky. Kontrolovaný experiment na datové sadě UNSW-NB15 prokázal statisticky významný rozdíl mezi všemi třemi skupinami (Kruskal--Wallisův test, $p = 0{,}0012$). Konvoluční model (CNN) dosáhl nejvyššího F1~skóre 0,94; modely hlubokého učení s~učitelem statisticky významně překonaly klasické strojové učení i~statistické metody. V~režimu učení bez učitele však metody klasického strojového učení dosáhly srovnatelné výkonnosti s~hlubokým učením při nižší výpočetní náročnosti.
+}
+\def\AbstraktEN{%
+This diploma thesis addresses anomaly detection in encrypted network communication through a~systematic comparison of three groups of detection methods: deep learning, classical machine learning, and statistical/heuristic approaches. The thesis analyzes current methods from all three groups, designs an experimental environment for collecting and validating network flow data, implements a~prototype detection system with eleven models, and evaluates their effectiveness using precision, recall, F1~score, classification accuracy, and ROC curve metrics. A~controlled experiment on the UNSW-NB15 dataset revealed a~statistically significant difference among all three groups (Kruskal--Wallis test, $p = 0.0012$). The convolutional model (CNN) achieved the highest F1~score of~0.94; supervised deep learning models significantly outperformed both classical ML and statistical methods. In unsupervised mode classical ML methods achieved comparable performance to deep learning at lower computational cost.
+}
+
+\def\KlicovaSlova{detekce anomálií, šifrovaná komunikace, umělá inteligence, strojové učení, síťová bezpečnost, TLS, IDS}
+\def\KlicovaSlovaEN{anomaly detection, encrypted communication, artificial intelligence, machine learning, network security, TLS, IDS}
+
+\begin{document}
+\include{zacatek}
+
+\setcounter{tocdepth}{3}
+\tableofcontents
+
+\openright
+\phantomsection
+\addcontentsline{toc}{chapter}{Seznam obrázků}
+\listoffigures
+
+\clearpage
+\phantomsection
+\addcontentsline{toc}{chapter}{Seznam tabulek}
+\listoftables
+
+\include{zkratky}
+
+\pagestyle{fancy}
+\include{uvod}
+\include{kap01}
+\include{kap02}
+\include{kap03}
+% \include{kap04}
+% \include{...}
+% \include{...}
+\include{zaver}
+
+\include{literatura}
+
+\part*{Přílohy}
+\appendix
+\include{app01}
+\include{app02}
+% \include{...}
+% \include{...}
+
+\end{document}

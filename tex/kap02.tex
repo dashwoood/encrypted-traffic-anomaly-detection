@@ -1,0 +1,437 @@
+\chapter{Metodika}
+\label{chap:metodika}
+
+Tato kapitola popisuje návrh a~provedení experimentální části diplomové práce. Nejprve je představen zastřešující výzkumný rámec -- strategie Design Science Research (DSR) podle \textcite{Peffers2007} -- a~způsob, jakým jsou její fáze realizovány v~kontextu této práce. Následuje popis experimentálního prostředí, datových sad, implementovaného prototypu a~metodiky vyhodnocení včetně návrhu kontrolovaného experimentu dle \textcite{Wohlin2012}.
+
+\section{Výzkumný rámec: Design Science Research}
+\label{sec:dsr}
+
+Strategie DSR je vhodná pro práce, jejichž cílem je návrh a~evaluace artefaktu -- v~tomto případě prototypu detekčního systému a~experimentálního prostředí pro jeho vyhodnocení. \textcite{Peffers2007} definují šest fází DSR procesu; tabulka~\ref{tab:dsrfaze} ukazuje, jak jsou jednotlivé fáze realizovány v~této diplomové práci.
+
+\begin{table}[htbp]
+\centering
+\caption[Mapování fází DSR na činnosti v~diplomové práci]{Mapování fází DSR \parencite{Peffers2007} na činnosti v~diplomové práci}
+\label{tab:dsrfaze}
+\small
+\begin{tabular}{p{3.5cm}p{8.5cm}}
+\toprule
+Fáze DSR & Realizace v~práci \\
+\midrule
+1. Identifikace problému a~motivace &
+Rostoucí podíl šifrované komunikace omezuje detekční metody založené na inspekci obsahu paketů; je třeba posoudit, zda a~kdy metody hlubokého učení přinášejí oproti klasickému strojovému učení a~statistickým přístupům měřitelný přínos (viz kapitola~\ref{chap:reserse} a~úvod práce). \\[4pt]
+2. Definice cílů řešení &
+Hlavní cíl: systematické srovnání tří skupin metod (hluboké učení, klasické strojové učení, statistické) na shodných datech.\newline
+Dílčí cíle: experimentální prostředí, prototyp, metriky, statistika pro ověřování hypotéz (viz úvod). \\[4pt]
+3. Návrh a~vývoj artefaktu &
+Artefakt zahrnuje:
+\begin{itemize}[nosep,leftmargin=1.2em]
+\item testovací prostředí pro sběr a~přehrávání síťových toků v~kontejnerovém orchestračním prostředí,
+\item balíček s~registrem modelů ze všech tří skupin se společným rozhraním,
+\item automatizovaný postup předzpracování dat z~veřejných srovnávacích sad.
+\end{itemize}
+Ověření integrace prostředí je popsáno v~sekci~\ref{sec:exp-prostredi}. \\[4pt]
+4. Demonstrace &
+Spuštění experimentu na UNSW-NB15: trénování a~vyhodnocení všech 11 modelů na kanonické datové sadě; výsledky v~kapitole~\ref{chap:vysledky}. \\[4pt]
+5. Evaluace &
+Vyhodnocení metrikami (přesnost, úplnost, F1, ROC-AUC) a~statistikou pro testování hypotéz: Kruskal--Wallisův test s~post-hoc párovými Wilcoxonovými testy s~Bonferroniho korekcí (sekce~\ref{sec:metodika-vyhodnoceni}); kontrolovaný experiment dle \textcite{Wohlin2012}. \\[4pt]
+6. Komunikace &
+Text diplomové práce a~přiložené artefakty (repozitář se zdrojovým kódem, konfiguračními soubory a~reprodukovatelnými experimenty). \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Volba DSR je motivována tím, že práce nevytváří pouze teoretický přínos (rešerše a~tematická analýza), ale především praktický artefakt -- funkční prototyp a~experimentální řetězec zpracování -- jehož kvalitu je třeba vyhodnotit empiricky. Na rozdíl od čistě empirických nebo vysvětlujících přístupů poskytuje DSR explicitní rámec pro iterativní propojení návrhu artefaktu s~jeho evaluací, což odpovídá povaze této práce, kde detekční systém není cílem sám o~sobě, ale nástrojem pro naplnění cílů práce týkajících se srovnání detekčních metod.
+
+Zbývající sekce této kapitoly sledují fáze DSR 3--5. Sekce~\ref{sec:struktura-repo} a~\ref{sec:exp-prostredi} popisují strukturu repozitáře a~experimentální prostředí, které tvoří infrastrukturní část artefaktu (fáze~3 -- návrh a~vývoj). Sekce~\ref{sec:datove-sady} a~\ref{sec:implementace} se věnují datovým sadám a~implementaci prototypu detekčního systému, čímž artefakt dostává svou algoritmickou náplň (pokračování fáze~3). Sekce~\ref{sec:metodika-vyhodnoceni} definuje metriky a~návrh experimentu, tedy metodiku evaluace (fáze~5); samotná demonstrace (fáze~4) a~její výsledky jsou předmětem kapitoly~\ref{chap:vysledky}. Fáze~6 (komunikace) je realizována textem diplomové práce a~přiloženým repozitářem.
+
+\section{Struktura repozitáře projektu}
+\label{sec:struktura-repo}
+
+Veškerý zdrojový kód, konfigurační soubory, experimentální skripty a~zdrojové texty práce jsou organizovány v~jednom repozitáři. Přehled adresářové struktury je uveden v~tabulce~\ref{tab:struktura-repozitare}.
+
+\needspace{0.48\textheight}
+\begin{minipage}{\textwidth}
+\captionsetup{skip=6pt}
+\captionof{table}[Struktura repozitáře artefaktu]{Stromová struktura hlavních adresářů a~souborů repozitáře artefaktu.}
+\label{tab:struktura-repozitare}
+\vspace{0.35em}
+\begin{Verbatim}[fontsize=\footnotesize,frame=single,baselinestretch=0.96]
+diploma/
+|-- detection-mechanisms/       hlavní Python balíček
+|   |-- models/
+|   |   |-- ai/                 hluboké učení (AE, CNN, LSTM, GRU, Transformer)
+|   |   |-- traditional/        klasické ML (IF, PCA, KMeans) + stat./heur.
+|   |   |                         (baseline, threshold, ensemble)
+|   |   |-- base.py             společné rozhraní detektoru
+|   |   `-- registry.py         registr modelu
+|   |-- datasets/
+|   |   |-- prepare.py          příprava kanonického CSV
+|   |   `-- normalize_unsw.py   mapování sloupců UNSW-NB15
+|   |-- cli.py                  příkazové rozhraní (track, train, daemon)
+|   |-- evaluation.py           výpočet metrik
+|   |-- statistical_tests.py    statistické testy (Wilcoxon, Kruskal-Wallis)
+|   `-- visualization.py        generování grafu
+|-- testing-environment/        kontejnerové testovací prostředí
+|   |-- generator/              generátor syntetického provozu
+|   |-- receiver/               přijímač a agregátor toku
+|   `-- flow-replayer/          přehrávač srovnavácích dat
+|-- experiments/
+|   |-- run_experiment.py       řízení experimentálního běhu
+|   `-- results/                vystupní metriky a grafy
+|-- data/datasets/              datové sady (nejsou v repozitáři)
+|-- tex/                        zdrojové texty práce
+|-- docker-compose.yml          orchestrace kontejnerů
+`-- Makefile                    automatizace úloh
+\end{Verbatim}
+\end{minipage}
+
+Balíček \texttt{detection-mechanisms} tvoří jádro praktické části. Adresář \texttt{models/} obsahuje tři skupiny detektorů -- modely hlubokého učení, klasického strojového učení a~statistické/heuristické metody -- implementující společné rozhraní definované v~\texttt{base.py}. Registr v~\texttt{registry.py} umožňuje jednotné vytváření a~konfiguraci detektorů podle jména. Adresář \texttt{datasets/} zajišťuje stažení, normalizaci a~rozdělení dat z~veřejných srovnávacích sad do kanonického formátu~CSV. Příkazové rozhraní v~\texttt{cli.py} zpřístupňuje režimy \texttt{track}, \texttt{train} a~\texttt{daemon} pro integraci s~testovacím prostředím.
+
+Adresář \path{testing-environment/} obsahuje kontejnery Docker \parencite{Docker2024} pro syntetické integrační prostředí: generátor odesílá požadavky na přijímač, který z~nich agreguje záznamy toků do souboru \path{flows.csv}. Skript \path{experiments/run_experiment.py} řídí celý experimentální běh -- od trénování modelů přes vyhodnocení metrik po generování statistických srovnání a~grafů do adresáře \path{experiments/results/}.
+
+\section{Experimentální prostředí}
+\label{sec:exp-prostredi}
+
+Tato sekce odpovídá infrastrukturní části fáze~3 DSR (návrh a~vývoj artefaktu). Artefaktem je dvouúrovňové testovací prostředí se dvěma režimy: syntetický integrační režim umožňuje ověření detektoru nad živým provozem, zatímco režim přehrávání srovnávacích dat zajišťuje reprodukovatelné vyhodnocení na veřejných datových sadách.
+
+\subsection{Architektura pro sběr a reprodukovatelné přehrávání síťových toků}
+\label{sec:architektura-sber}
+
+Experimentální artefakt sestává ze dvou doplňujících se režimů, které řeší odlišné potřeby vývoje a~evaluace.
+
+Prvním režimem je syntetické integrační prostředí založené na kontejnerech Docker, orchestrovaných souborem \path{docker-compose.yml} v~kořeni repozitáře.
+Generátor provozu (\path{testing-environment/generator/}) běží v~izolovaném kontejneru a~posílá reálné TCP požadavky na přijímač (\path{testing-environment/receiver/}) v~druhém kontejneru.
+Oba kontejnery sdílejí virtuální síť vytvořenou nástrojem Docker Compose; prototypová implementace využívá HTTP komunikaci na definovaném portu, která umožňuje jednoduchý sběr metadat a~kontrolu referenčních štítků.
+Metadata každého požadavku -- délka cesty, parametry dotazu, hlavičky, \texttt{User-Agent}, časování -- jsou na straně přijímače agregována do záznamů toků a~zapisována do souboru \path{data/logs/flows.csv} v~kanonickém formátu, tj. v~jednotném CSV schématu 17~numerických příznaků definovaném v~sekci~\ref{sec:kanonicke-schema}.
+Anomální požadavky jsou značeny hlavičkou \texttt{X-Test-Label}\,:\,\texttt{anomaly}, jejíž hodnota je přijímačem převedena na sloupec \texttt{ground\_truth}.
+Integrační prostředí neobsahuje reálný malware ani skutečné exploity a~neslouží jako věrný model HTTPS/TLS~1.3 provozu; jeho účelem je ověření celého řetězce od zachycení provozu přes agregaci toků po klasifikaci detektorem a~demonstrace příkazového rozhraní v~režimu \texttt{daemon}. Volba HTTP jako aplikačního protokolu nemá vliv na platnost srovnání detekčních metod, neboť všechny implementované detektory pracují výhradně s~metadaty toků (objemy, časování, počty), nikoli s~obsahem paketů, a~přenositelnost výsledků je tak dána tokovými statistikami, nikoli konkrétním aplikačním protokolem.
+
+Druhým režimem je reprodukovatelný řetězec zpracování nad veřejnými srovnávacími daty.
+Komponenta \texttt{flow-replayer} (\path{testing-environment/flow-replayer/}) postupně čte řádky z~předpřipraveného kanonického CSV a~zapisuje je do \path{flows.csv} s~volitelnou meziřádkovou prodlevou simulující příchod reálného provozu.
+Orchestrace probíhá přes samostatný konfigurační soubor pro~srovnávací režim (\mbox{\texttt{docker-compose.benchmark.yml}}).
+Na rozdíl od integračního režimu jsou data přehrávaná tímto způsobem identická s~trénovacími a~validačními soubory, takže detektor vidí stejný příznakový prostor, na kterém byl trénován.
+Pro hlavní vyhodnocení v~této práci jsou však použity předpřipravené kanonické CSV soubory vzniklé skriptem \path{detection-mechanisms/datasets/prepare.py} (cíl \texttt{make prepare-data}), aby byly všechny modely srovnány na identickém trénovacím a~validačním souboru bez závislosti na běhu Docker kontejnerů.
+
+\subsection{Konfigurace scénářů provozu}
+\label{sec:konfigurace}
+
+V~integračním režimu je chování generátoru řízeno proměnnými prostředí:
+
+\begin{itemize}
+\item \texttt{ANOMALY\_RATE} -- podíl anomálních požadavků (výchozí hodnota 0{,}1).
+\item \texttt{SIMULATE\_ATTACKS} -- při zapnutí generátor pro anomální požadavky používá odlišné vzorce: podezřelé cesty (\texttt{/admin}, \texttt{/.env}, pokusy o~průchod adresářů), specifické řetězce \texttt{User-Agent} odpovídající skenerům a~kratší mezidobí mezi požadavky.
+\item \texttt{TRAFFIC\_INTERVAL\_SEC} -- průměrný interval mezi normálními požadavky.
+\item \texttt{ROLLING\_WINDOW\_SEC} -- šířka okna pro výpočet příznaku \texttt{requests\_last\_60s}.
+\end{itemize}
+
+Normální požadavky obsahují běžné cesty, standardní hlavičky a~delší intervaly odpovídající interakci uživatele. Tím vznikají kontrolované referenční štítky bez reálných exploitů, ale s~dostatečně odlišnými charakteristikami toků pro ověření detektoru.
+
+Pro statistické srovnání metod v~této práci je rozhodující scénář srovnávací datové sady: všechny modely vidí stejnou směs normálních a~útočných toků podle štítků UNSW-NB15.
+
+\subsection{Přijímač a zachytávání metadat síťových toků}
+\label{sec:prijimac}
+
+Přijímač v~integračním prostředí slouží jako prototyp komponenty pro~sběr metadat a~definuje kanonické schéma příznaků používané všemi detektory. Přestože hlavní srovnání metod vychází ze~srovnávacích dat (viz~sekce~\ref{sec:omezeni-synteticke}), přijímač plní dvě funkce: ověřuje integraci celého řetězce od~zachycení provozu po~klasifikaci a~definuje strukturu vstupních dat, na~kterou jsou mapovány i~veřejné datové sady.
+
+Přijímač zpracovává každý příchozí požadavek a~zapisuje pro něj jeden řádek se~17~numerickými příznaky v~kanonickém schématu definovaném v~sekci~\ref{sec:kanonicke-schema}. Příznaky zahrnují vlastnosti extrahované přímo z~požadavku (délka cesty, doba obsluhy, velikost odpovědi aj.) i~agregační metriky počítané průběžně (mezidobí mezi toky, počet požadavků v~klouzavém okně, časové příznaky). Binární štítek \path{ground_truth} je odvozen z~řídicí hlavičky. Volitelně lze současně zachytávat surové pakety nástrojem \texttt{tcpdump} do souboru pcap pro audit.
+
+Integrační ověření prostředí bylo provedeno spuštěním generátoru a~přijímače; po~ustálení provozu vznikl neprázdný soubor s~toky v~kanonickém formátu, čímž byla potvrzena funkčnost řetězce. Vyhodnocení metrik v~kapitole~\ref{chap:vysledky} vychází ze~statických CSV připravených z~UNSW-NB15, aby bylo srovnání modelů reprodukovatelné bez~závislosti na~běžících kontejnerech.
+
+\subsection{Omezení syntetického prostředí a důvody přechodu na srovnávací data}
+\label{sec:omezeni-synteticke}
+
+Původním záměrem bylo vybudovat syntetické prostředí schopné generovat provoz s~distribucí příznaků srovnatelnou s~reálným síťovým provozem, a~trénovat i~vyhodnocovat detektory přímo na~takto zachycených tocích. Tento cíl se nepodařilo naplnit z~následujících důvodů.
+
+Kanonické schéma (sekce~\ref{sec:prijimac}) bylo v~prototypu navrženo pro metadata HTTP požadavků (délka cesty, počet hlaviček, \texttt{User-Agent}), avšak srovnávací datové sady -- zejména UNSW-NB15 -- obsahují síťové statistiky na~úrovni paketů (průměrná velikost paketu, TTL, mezipaketové intervaly). Při~normalizaci jsou pole UNSW-NB15 mapována na~kanonická jména (např.~\texttt{path\_length} odpovídá průměrné velikosti zdrojového paketu \texttt{smean}), ale hodnotové rozsahy a~korelace se od~dat integračního prostředí podstatně liší. Modely trénované na~srovnávacích datech proto vykazují nepredikovatelné chování na~provozu z~integračního prostředí, protože ten představuje vstup mimo trénovací rozdělení pravděpodobnosti.
+
+Dosažení věrohodné shody distribucí by vyžadovalo generování provozu na~úrovni paketů s~realistickými statistikami velikostí, mezipaketových intervalů a~příznaky TCP -- úloha, která sama o~sobě představuje rozsáhlý výzkumný problém přesahující rozsah této práce. V~důsledku toho bylo syntetické prostředí ponecháno jako nástroj pro~integrační ověření řetězce (zachycení provozu $\rightarrow$ agregace toků $\rightarrow$ klasifikace detektorem), zatímco samotné srovnání metod je vedeno výhradně na~normalizovaných datech UNSW-NB15, čímž je zajištěna platnost relativního srovnání.
+
+Syntetické prostředí nicméně zůstává součástí artefaktu jako základ pro~budoucí rozšíření: nasazení přijímače v~reálné podnikové síti by umožnilo sběr toků s~přirozenou distribucí příznaků, na~kterých by bylo možné modely dotrénovat a~validovat ve~skutečném prostředí.
+
+\section{Datové sady}
+\label{sec:datove-sady}
+
+Volba datových sad a~jejich předzpracování tvoří klíčovou součást fáze~3 DSR, neboť kvalita vstupních dat přímo ovlivňuje validitu srovnání detekčních metod.
+
+\subsection{Výběr veřejně dostupných datových sad}
+\label{sec:vyber-datasetu}
+
+Pro hlavní experimentální srovnání byla zvolena datová sada UNSW-NB15 \parencite{Moustafa2015}. Při výběru byla zvažována i~datová sada CICIDS2017 \parencite{Sharafaldin2018}; tabulka~\ref{tab:dataset-comparison} shrnuje klíčové rozdíly mezi oběma kandidáty.
+
+\begin{table}[htbp]
+\centering
+\caption{Porovnání datových sad UNSW-NB15 a~CICIDS2017}
+\label{tab:dataset-comparison}
+\small
+\begin{tabular}{p{4cm}p{4.5cm}p{4.5cm}}
+\toprule
+Kritérium & UNSW-NB15 & CICIDS2017 \\
+\midrule
+Autor & ACCS, UNSW Sydney & CIC, University of New Brunswick \\
+Počet záznamů & $\approx$\,2{,}5~mil. & $\approx$\,2{,}8~mil. \\
+Kategorie útoků & 9 (DoS, Exploits, Fuzzers, \ldots) & 7 (DDoS, PortScan, Brute Force, \ldots) \\
+Příznaky na úrovni toků & 49 (paketové statistiky, TTL, \ldots) & 80+ (CICFlowMeter) \\
+Pokrytí kanonického schématu & 15 z~17 příznaků (88\,\%) & 10 z~17 příznaků (59\,\%) \\
+Chybějící kanonické příznaky & \texttt{user\_agent\_length}, \texttt{referer\_present} & navíc \texttt{response\_code}, časové příznaky, \texttt{unique\_paths\_count} \\
+Citovanost v~rešerši & \textcite{Barut2020}, \textcite{Ji2024} & \textcite{Bakhshi2021} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+UNSW-NB15 byla zvolena primárně díky vyššímu pokrytí kanonického schématu (88\,\% oproti 59\,\% u~CICIDS2017). Pokrytí pod 60\,\% by znehodnotilo přímé srovnání, protože zbývající sloupce by zůstaly nulové a~modely by pracovaly s~výrazně redukovaným příznakovým prostorem. Z~celku UNSW-NB15 je po normalizaci a~filtraci použit vzorek přibližně 51\,000~toků s~podílem anomálií okolo 64\,\%. Vysoký podíl anomálií je charakteristický pro laboratorní datové sady a~vyžaduje odpovídající nastavení parametrů detektorů bez učitele (viz sekce~\ref{sec:tradicni-algoritmy}).
+
+Hlavní experimentální srovnání všech jedenácti modelů je vedeno výhradně na UNSW-NB15, aby byla zachována konzistence příznakového prostoru a~aby šlo interpretovat rozdíly v~F1 jako důsledek volby algoritmu. CICIDS2017 je v~repozitáři podporována normalizačním skriptem \path{normalize_cicids.py}, ale rozšíření hlavního srovnání na tuto sadu by vyžadovalo doplnění mapování nebo úpravu příznakového prostoru, což přesahuje rozsah této práce.
+
+Je třeba zdůraznit, že UNSW-NB15 není datovou sadou specifickou pro čistě TLS provoz; obsahuje obecné síťové toky. Použité příznaky na úrovni toků (délky paketů, mezipaketové intervaly, objemy, příznaky TCP) jsou však protokolově agnostické -- stejné statistiky lze odvodit z~šifrovaného i~nešifrovaného provozu, protože nevyžadují přístup k~obsahu aplikační vrstvy. Použití UNSW-NB15 je v~této práci validní pro reprodukovatelné laboratorní srovnání detekčních metod nad jednotným příznakovým prostorem; datovou sadu nelze považovat za plnohodnotnou reprezentaci současného produkčního HTTPS/TLS~1.3 provozu. Výsledky experimentu jsou proto interpretovatelné jako srovnání detektorů na statistikách toků v~laboratorním prostředí; přenos na čistě HTTPS metadata je omezen a~je reflektován v~sekci~\ref{sec:hrozby-validity} a~v~kapitole~\ref{chap:vysledky}.
+
+\subsection{Kanonické schéma příznaků}
+\label{sec:kanonicke-schema}
+
+Všechny detekční modely pracují se shodným vstupním vektorem 17~numerických příznaků. Dimenze 17 byla zvolena jako kompromis mezi dostatečně bohatou reprezentací tokového chování a~požadavkem na jednotný příznakový prostor, který je mapovatelný a~reprodukovatelný jak v~integračním prostředí, tak ve~veřejné datové sadě UNSW-NB15. Schéma proto záměrně nezahrnuje všechny dostupné atributy jednotlivých zdrojů, ale pouze takové příznaky, pro něž bylo možné nalézt úplnou nebo alespoň aproximativní korespondenci a~současně je využít ve~všech hodnocených modelech. Pevná dimenze rovněž zajišťuje, že rozdíly ve~výsledcích lze připsat především detekční metodě, nikoli odlišnému vstupnímu prostoru.
+
+Kanonické schéma bylo původně navrženo pro metadata ze syntetického integračního prostředí (viz sekce~\ref{sec:exp-prostredi}); při normalizaci UNSW-NB15 jsou pole záznamů datové sady mapována na odpovídající kanonické sloupce. Schéma obsahuje příznaky extrahované přímo z~požadavku:
+
+\begin{itemize}
+\item délka cesty, délka dotazu, doba obsluhy, stavový kód odpovědi,
+\item velikost odpovědi, velikost těla požadavku,
+\item počet hlaviček, jejich celková velikost, délka \texttt{User-Agent}, přítomnost hlavičky \texttt{Referer},
+\end{itemize}
+
+\noindent a~agregační příznaky počítané průběžně:
+
+\begin{itemize}
+\item mezidobí od předchozího toku stejného klienta (\texttt{inter\_arrival\_ms}),
+\item pořadové číslo požadavku (\texttt{request\_sequence}),
+\item počet požadavků v~klouzavém okně (\texttt{requests\_last\_60s}),
+\item počet unikátních cest (\texttt{unique\_paths\_count}),
+\item časové příznaky \texttt{hour\_utc}, \texttt{minute} a~\texttt{day\_of\_week}.
+\end{itemize}
+
+\noindent Tabulka~\ref{tab:feature-mapping} shrnuje klíčová mapování na UNSW-NB15 a~jejich kvalitu.
+
+\begin{table}[htbp]
+\centering
+\caption{Mapování vybraných příznaků UNSW-NB15 na kanonické schéma}
+\label{tab:feature-mapping}
+\small
+\begin{tabular}{lll}
+\toprule
+Kanonický příznak & Zdroj v~UNSW-NB15 & Kvalita mapování \\
+\midrule
+\texttt{path\_length}      & \texttt{smean} (průměr. velikost src paketu) & Aproximativní \\
+\texttt{query\_length}     & \texttt{dmean} (průměr. velikost dst paketu) & Aproximativní \\
+\texttt{duration\_ms}      & \texttt{dur} (trvání toku v~sekundách)      & Převod jednotek \\
+\texttt{response\_size}    & \texttt{dbytes} (bajty dst$\rightarrow$src)  & Dobrá shoda \\
+\texttt{request\_content\_length} & \texttt{sbytes} (bajty src$\rightarrow$dst) & Dobrá shoda \\
+\texttt{header\_count}     & \texttt{sttl} (zdrojový TTL)                & Aproximativní \\
+\texttt{inter\_arrival\_ms} & \texttt{sinpkt} (mezipaketový interval)     & Přijatelná shoda \\
+\texttt{request\_sequence} & \texttt{spkts} (počet src paketů)           & Přijatelná shoda \\
+\texttt{unique\_paths\_count} & \texttt{ct\_srv\_src} (spojení ke službě)  & Aproximativní \\
+\texttt{user\_agent\_length} & --                                         & Nedostupné (0) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Aproximativní mapování znamená, že absolutní hodnoty příznaků mají odlišný sémantický význam (např. délka URL cesty vs. průměrná velikost paketu). Absolutní hodnoty metrik proto nelze interpretovat jako výkon v~čistě HTTPS provozu. Protože však všechny modely jsou trénovány a~vyhodnocovány na stejné normalizované reprezentaci, relativní srovnání metod na shodném vstupu zůstává platné. Tato limitace je reflektována při interpretaci výsledků v~kapitole~\ref{chap:vysledky}.
+
+\subsection{Postup přípravy datové sady}
+\label{sec:priprava-dat}
+
+Předzpracování dat je automatizováno skriptem \path{prepare.py} v~adresáři \path{detection-mechanisms/datasets/}. Skript provádí následující kroky:
+
+\begin{enumerate}
+\item Stažení nebo načtení zdrojových dat UNSW-NB15 ze zdrojových CSV souborů.
+\item Normalizace sloupců do kanonického formátu pomocí skriptu \path{normalize_unsw.py}, který mapuje 49~původních příznaků UNSW-NB15 na 17~kanonických sloupců podle tabulky~\ref{tab:feature-mapping}. Převod jednotek (sekundy na milisekundy u~\texttt{duration\_ms}) a~doplnění výchozích hodnot (0 pro nedostupné příznaky) jsou součástí tohoto kroku.
+\item Náhodné rozdělení na trénovací (80\,\%) a~validační (20\,\%) množinu pro modely pracující s~jednotlivými toky. Výstupem této operace jsou CSV soubory \path{canonical_train.csv} a~\path{canonical_val.csv}.
+\item Časově seřazené rozdělení (první 80\,\% toků na trénování, zbylých 20\,\% na validaci) pro sekvenční modely. Výstupem jsou \path{canonical_train_ordered.csv} a~\path{canonical_val_ordered.csv}, kde je zachováno původní pořadí zachycení paketů.
+\end{enumerate}
+
+Pro sekvenční modely (LSTM, GRU, Transformer) je nad časově seřazenými daty dodatečně konstruován výstup s~posuvnými okny délky 16~toků; řazení toků respektuje časovou návaznost, aby okna odpovídala realistickému pořadí pozorování. Chybějící hodnoty jsou při čtení v~rámci zpracovatelského řetězce nahrazeny nulou. Náhodná iniciální hodnota generátorů (\texttt{random}, NumPy, PyTorch) je v~experimentálním skriptu \path{run_experiment.py} fixována na hodnotu~42, aby šlo výsledky reprodukovat.
+
+\section{Implementace prototypu detekčního systému}
+\label{sec:implementace}
+
+Implementace detekčního systému představuje jádro artefaktu navrženého ve fázi~3 DSR. Všechny detektory jsou soustředěny v~balíčku \texttt{detection-mechanisms} a~implementují společné rozhraní definované v~\path{models/base.py}: metody \texttt{fit} (trénování), \texttt{predict} (binární klasifikace) a~volitelně \texttt{predict\_scores} (spojité skóre anomálií pro konstrukci křivek ROC a~PR).
+Registr modelů v~\path{registry.py} umožňuje jednotné vytváření detektorů podle jména, což zjednodušuje experimentální postup zpracování -- skript \path{run_experiment.py} iteruje přes všechny registrované modely bez znalosti jejich interní implementace.
+
+Knihovna \emph{scikit-learn} \parencite{Pedregosa2011} se v~artefaktu uplatňuje u~detektorů všech tří skupin, avšak v~odlišné úloze. U~izolačního lesa, PCA a~K-means představují třídy \texttt{IsolationForest}, \texttt{PCA} a~\texttt{KMeans} přímo implementaci algoritmu; současně se u~nich používá \texttt{StandardScaler} pro standardizaci příznaků. Modely hlubokého učení (CNN, LSTM, GRU, Transformer, autoencoder) mají výpočetní jádro v~open-source frameworku \emph{PyTorch} \parencite{Paszke2019}: architektury neuronových sítí jsou definovány moduly \texttt{torch.nn}, trénování využívá automatický výpočet gradientů (autograd) a~optimalizátory z~\texttt{torch.optim}, odvozování pravděpodobností při inferenci probíhá na CPU nebo GPU podle dostupnosti zařízení (\texttt{torch.cuda}). Standardizace vstupních příznaků před trénováním i~inferencí probíhá prostřednictvím \texttt{StandardScaler} ze scikit-learn v~modulu \path{models/ai/_common.py}, takže škálování dat je napříč všemi skupinami detektorů sjednoceno na stejném API. Modul \texttt{sklearn.metrics} počítá klasifikační metriky pro všechny modely a~\texttt{sklearn.model\_selection} (stratifikované $k$-násobné rozdělení) slouží ke křížové validaci v~\path{run_experiment.py}. Detektory \texttt{baseline} a~prahování z-skóre (\texttt{threshold}) doplňují vlastní logiku bez uvedených učících se tříd scikit-learn; kombinovaný \texttt{ensemble} agreguje výstupy detektorů postavených na této knihovně (izolační les, PCA, K-means).
+
+\subsection{Vstupní reprezentace toků pro modely}
+\label{sec:predzpracovani}
+
+Na vstupu modelu je vždy vektor 17~příznaků ze schématu CSV. Metody klasického strojového učení a~statistické metody bez učitele (izolační les, PCA, K-means, prahování) pracují přímo nad touto maticí příznaků; normalizace (standardizace na nulový průměr a~jednotkový rozptyl) je provedena interně v~rámci každé implementace tam, kde to algoritmus vyžaduje. Neuronové sítě učené s učitelem (CNN, LSTM, GRU, Transformer) přijímají normalizované tensory typu \texttt{float32}; u~sekvenčních architektur má vstup rozměr okno\,$\times$\,17, kde 17 odpovídá počtu příznaků kanonického schématu (viz sekce~\ref{sec:kanonicke-schema}) a~okno je délka posuvného okna 16~toků -- hodnota zvolená jako kompromis mezi dostatečným časovým kontextem a~výpočetní náročností trénování. Autoencoder zpracovává jednotlivé toky jako vektory délky~17. Štítek \texttt{ground\_truth} je binární (0\,=\,normální, 1\,=\,anomálie).
+
+U~detektorů bez učitele, které pracují se skóre anomálie nebo s~rekonstrukční chybou, se často nastavuje parametr \emph{kontaminace} (anglicky \emph{contamination}; u~izolačního lesa jde o~argument \texttt{contamination} v~knihovně scikit-learn). Kontaminace vyjadřuje \emph{předpokládaný podíl anomálních vzorků} v~trénovacích datech, obvykle jako číslo z~intervalu $(0, 1)$. Z~této hodnoty se odvodí práh klasifikace tak, aby po seřazení vzorků podle skóre anomálie (nebo podle velikosti rekonstrukční chyby) bylo jako anomální označeno přibližně odpovídající množství nejextrémnějších pozorování. Při trénování bez učitele nejsou štítky využity -- parametr je tedy domněnkou o~řádu podílu výskytu anomálií, nikoli odvozením ze známých tříd. Nesoulad mezi zvolenou kontaminací a~skutečným podílem anomálií v~datech vede k~posunu prahu a~mění úplnost i~přesnost výsledné binární predikce.
+
+\subsection{Vybrané metody hlubokého učení}
+\label{sec:ai-algoritmy}
+
+V~registru modelů jsou za skupinu hlubokého učení zařazeny tyto komponenty, jejichž architektonické parametry shrnuje tabulka~\ref{tab:ai-models}.
+
+\begin{table}[htbp]
+\centering
+\caption{Architektura implementovaných detektorů hlubokého učení}
+\label{tab:ai-models}
+\small
+\begin{tabular}{llp{7cm}}
+\toprule
+Model & Typ vstupu & Klíčové parametry \\
+\midrule
+Autoencoder & tok $(1 \times 17)$ & Vrstvy: 17--32--16--8--16--32--17; MSE ztrátová funkce; 100 epoch; kontaminace 0{,}1 \\
+CNN & tok $(1 \times 17)$ & 1D konvoluce: Conv1d(1,32) $\rightarrow$ Conv1d(32,64) $\rightarrow$ FC; BCE loss; 50 epoch \\
+LSTM & okno $(16 \times 17)$ & 2~vrstvy, 64 skrytých jednotek, pravděpodobnostní vypuštění neuronů 0{,}3; BCE loss s~váhami tříd; 50 epoch \\
+GRU & okno $(16 \times 17)$ & 2~vrstvy, 64 skrytých jednotek, pravděpodobnostní vypuštění neuronů 0{,}3; BCE loss s~váhami tříd; 50 epoch \\
+Transformer & okno $(16 \times 17)$ & $d_\text{model}=32$, 4~hlavy, 2~vrstvy; poziční kódování; BCE loss s~váhami tříd; 50 epoch \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Autoencoder je trénován na rekonstrukci vstupních toků prostřednictvím úzkého hrdla (8~neuronů). Při aplikaci natrénovaného modelu je pro každý tok vypočtena střední kvadratická chyba rekonstrukce (MSE); toky s~chybou překračující práh odpovídající zadané kontaminaci jsou klasifikovány jako anomální. Jedná se o~metodu bez učitele, takže autoencoder nevyužívá štítky během trénování a~může detekovat i~dosud neznámé typy anomálií \parencite{Ji2024}.
+
+CNN aplikuje dvě jednorozměrné konvoluční vrstvy na vektor příznaků a~extrahuje lokální kombinace příznaků, například současný výskyt vysoké délky cesty a~krátkého mezipaketového intervalu. Výstup konvolučních vrstev prochází plně propojenou vrstvou se sigmoidní aktivací. Díky paralelizovatelnosti konvolučních operací má CNN nízkou latenci při klasifikaci \parencite{Bakhshi2021}.
+
+Sekvenční modely (LSTM, GRU, Transformer) zpracovávají posuvná okna 16~po~sobě jdoucích toků a~klasifikují poslední tok v~okně. LSTM využívá mechanismus tří brán pro selektivní uchovávání a~zapomínání informací v~sekvenci; GRU je jeho zjednodušenou variantou se dvěma branami a~nižšími výpočetními nároky \parencite{Bakhshi2021}. Transformer namísto sekvenčního zpracování používá mechanismus vnitřní pozornosti (self-attention), který váží vztahy mezi libovolnými pozicemi v~okně paralelně. Všechny tři modely používají binární křížovou entropii s~váhami tříd nastavenými tak, aby prioritizovaly úplnost na anomáliích -- váha anomální třídy je navýšena úměrně poměru tříd v~trénovacích datech.
+
+\subsection{Vybrané metody klasického strojového učení a~statistické metody}
+\label{sec:tradicni-algoritmy}
+
+Zbývající dvě skupiny -- klasické strojové učení (izolační les, PCA, K-means) a~statistické/heuristické metody (baseline, prahování z-skóre, ensemble) -- zahrnují šest detektorů s~odlišnými algoritmickými principy, jejichž parametry shrnuje tabulka~\ref{tab:trad-models}.
+
+\begin{table}[htbp]
+\centering
+\caption{Parametry implementovaných detektorů klasického strojového učení a~statistických metod}
+\label{tab:trad-models}
+\small
+\begin{tabular}{llp{7cm}}
+\toprule
+Model & Algoritmus & Klíčové parametry \\
+\midrule
+\texttt{baseline} & Žádný & Žádné; referenční dolní mez výkonu \\
+\texttt{Isolation Forest} & Izolační stromy & \texttt{contamination}=0{,}5; \texttt{random\_state}=42 \\
+\texttt{PCA} & Rekonstrukční chyba & \texttt{n\_components}=0{,}95 (95\,\% rozptylu); kontaminace $\approx$ 0{,}6 \\
+\texttt{K-means} & Vzdálenost od centroidu & $k$=5 shluků; kontaminace $\approx$ 0{,}6 \\
+\texttt{threshold} & Z-skóre & Práh $k$=3{,}0 směrodatných odchylek \\
+\texttt{ensemble} & Majoritní hlasování & Kombinace IF + PCA + K-means \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Baseline model klasifikuje všechny toky jako normální a~slouží jako referenční dolní mez -- model, který nedokáže detekovat žádnou anomálii. Jeho metriky (nulová úplnost, 100\,\% FNR) umožňují kvantifikovat přínos ostatních metod.
+
+Izolační les buduje soubor náhodných izolačních stromů, kde anomální body v~řídkých oblastech prostoru jsou izolovány menším počtem rozdělení a~získávají vyšší anomálie skóre \parencite{Liu2008}. PCA redukuje 17-dimenzionální příznakový prostor na hlavní komponenty vysvětlující 95\,\% rozptylu a~měří rekonstrukční chybu; toky s~vysokou chybou leží mimo podprostor normálního provozu \parencite{Chapagain2022}. K-means rozděluje toky do $k = 5$ shluků -- hodnota zvolená dle elbow metody na trénovacích datech jako kompromis mezi příliš hrubým ($k \le 3$) a~příliš jemným ($k \ge 8$) shlukováním -- a~klasifikuje toky s~velkou vzdáleností od nejbližšího centroidu jako anomálie. Model threshold počítá z-skóre pro každý příznak a~označuje tok jako anomální, pokud alespoň jeden příznak překročí tři směrodatné odchylky od průměru trénovacích dat.
+
+Kombinovaný detektor ensemble spojuje výstupy izolačního lesa, PCA a~K-means hlasováním většinou: tok je označen jako anomální, pokud ho alespoň dva ze tří zahrnutých detektorů klasifikují jako anomální. Tento přístup nevyžaduje další trénování a~snižuje závislost na specifických předpokladech jednoho algoritmu \parencite{OzkanOkay2021}.
+
+U~izolačního lesa, PCA a~K-means byla kontaminace použita k~určení prahu na skóre anomálie, rekonstrukční chybě respektive vzdálenosti od centroidu. V~experimentu je záměrně nastavena na~0{,}5--0{,}6, aby odpovídala vysokému podílu anomálií v~UNSW-NB15 (přibližně 64\,\%). Podhodnocení kontaminace (např.~výchozí 0{,}1) by vedlo k~umělému stropu úplnosti, protože model by a~priori předpokládal méně anomálií, než jich v~datech skutečně je.
+
+\subsection{Integrace do testovacího prostředí}
+\label{sec:integrace}
+
+Balíček \texttt{detection-mechanisms} exportuje příkazovou utilitu \texttt{detect} (definovanou v~\texttt{cli.py}) se třemi režimy provozu:
+
+\begin{description}
+\item[\texttt{track}] -- jednorázová detekce nad souborem toků; načte CSV soubor, aplikuje na něj zvolený model a~vypíše výsledky.
+\item[\texttt{train}] -- trénování a~uložení modelu na srovnávacích datech; serializovaný model je uložen do souboru pro pozdější použití.
+\item[\texttt{daemon}] -- průběžné sledování přibývajícího \texttt{flows.csv}; detektor periodicky čte nové řádky a~klasifikuje je v~reálném čase, což odpovídá režimu provozu nad integračním nebo přehrávacím prostředím se srovnávacími daty.
+\end{description}
+
+Všechny režimy využívají stejný registr modelů a~stejné rozhraní: metody \texttt{fit}, \texttt{predict} a~\texttt{predict\_scores}.
+Tato architektura zajišťuje, že model trénovaný cílem \texttt{train} je beze změn použitelný v~režimech \texttt{track} i~\texttt{daemon}, čímž je naplněn požadavek DSR na konzistentní artefakt přenositelný mezi vývojovou a~hodnotící fází.
+
+\section{Metodika vyhodnocení}
+\label{sec:metodika-vyhodnoceni}
+
+Metodika vyhodnocení odpovídá fázi~5 DSR (evaluace artefaktu). Cílem je posoudit, zda a~za jakých podmínek metody hlubokého učení dosahují měřitelně vyššího výkonu než klasické strojové učení a~statistické přístupy na shodných datech, a~zda jsou rozdíly mezi třemi skupinami statisticky významné.
+
+\subsection{Metriky}
+\label{sec:metriky}
+
+Pro každý model jsou na validační množině počítány následující metriky, jejichž volba vychází z~doporučení literatury pro hodnocení detekce anomálií v~síťovém provozu \parencite{Ji2024, Bakhshi2021}.
+
+Přesnost (precision, $P$) vyjadřuje podíl skutečných anomálií mezi všemi toky, které model označil jako anomální:
+\[
+P = \frac{\text{TP}}{\text{TP} + \text{FP}}\,.
+\]
+Úplnost (recall, $R$) vyjadřuje podíl zachycených anomálií ze všech skutečných anomálií:
+\[
+R = \frac{\text{TP}}{\text{TP} + \text{FN}}\,.
+\]
+F1~skóre je harmonický průměr přesnosti a~úplnosti:
+\[
+F_1 = \frac{2PR}{P + R}\,.
+\]
+Celková přesnost (accuracy) udává podíl správně klasifikovaných toků ze všech.
+
+U~modelů poskytujících spojité anomálie skóre (autoencoder, izolační les, PCA, K-means) jsou navíc počítány plochy pod křivkami: ROC-AUC (plocha pod křivkou závislosti true positive rate na false positive rate) a~PR-AUC (plocha pod křivkou precision-recall). Tyto metriky jsou nezávislé na volbě klasifikačního prahu a~umožňují posoudit schopnost modelu rozlišit třídy v~celém rozsahu prahů. Doplňkové míry -- false positive rate (FPR) a~false negative rate (FNR) -- a~úplná matice záměn (TP, FP, FN, TN) poskytují detailní pohled na typ chyb.
+
+V~bezpečnostním kontextu je zvlášť sledována úplnost, neboť nezachycená anomálie (falešná negativita) může mít závažnější důsledky než falešný poplach \parencite{OzkanOkay2021}. Proto je při interpretaci výsledků v~kapitole~\ref{chap:vysledky} kladen důraz na recall a~F1~skóre, které penalizují modely s~vysokou mírou nedetekovaných anomálií.
+
+\subsection{Návrh experimentu}
+\label{sec:design-experimentu}
+
+Experiment je navržen jako jednofaktorový kontrolovaný experiment podle metodiky \textcite{Wohlin2012}. Faktorem je volba detekčního algoritmu; závislou proměnnou je výkon měřený metrikami definovanými výše. Všechny ostatní proměnné jsou fixovány: vstupní data (kanonický UNSW-NB15), příznakový prostor (17~numerických příznaků),  iniciální hodnota generátorů~(42) a~výpočetní prostředí.
+
+Každý z~11~modelů je trénován na souboru \path{canonical_train.csv} a~vyhodnocen na \path{canonical_val.csv}.
+Sekvenční modely (LSTM, GRU, Transformer) používají časově seřazené varianty se shodnou datovou osnovou; predikce jsou zarovnány na podmnožinu toků s~dostatečnou historií (alespoň 16~předcházejících toků).
+Tím je zajištěno, že rozdíly ve výkonu modelů jsou připsatelné výhradně rozdílům v~algoritmické strategii, nikoli variabilitě dat.
+
+Modely jsou seskupeny do tří skupin pro následné statistické testování hypotéz:
+\begin{itemize}
+\item Hluboké učení: autoencoder, CNN, LSTM, GRU, Transformer -- modely založené na vícevrstvých neuronových sítích.
+\item Klasické strojové učení: izolační les, PCA, K-means -- algoritmy učící se z~dat bez hlubokých reprezentací.
+\item Statistické a~heuristické: baseline, prahování z-skóre (threshold), ensemble -- pevná pravidla či distribucionální testy.
+\end{itemize}
+
+\subsection{Statistické testování hypotéz}
+\label{sec:stat-testovani}
+
+Statistická analýza nad zvolenými metodami umělé inteligence aplikovanými na danou datovou sadu je realizována skriptem \path{statistical_tests.py} a~ověřuje hypotézu práce. Hypotéza je formulována konzistentně s~výzkumným záměrem posoudit přínos hlubokého učení oproti ostatním dvěma skupinám algoritmů:
+
+\begin{quote}
+\textbf{Hypotéza:} Metody hlubokého učení dosahují vyššího F1~skóre při detekci anomálií v~šifrovaném provozu než metody klasického strojového učení i~statistické/heuristické metody.
+\end{quote}
+
+\noindent V~termínech statistického testu odpovídá hypotéze dvoustupňový postup. Globální test rovnosti mediánů F1~skóre mezi třemi skupinami je nulovou hypotézou $H_0^{\mathrm{glob}}$: $\tilde{\mu}_{\mathrm{DL}} = \tilde{\mu}_{\mathrm{ML}} = \tilde{\mu}_{\mathrm{STAT}}$, proti alternativě $H_1^{\mathrm{glob}}$, že alespoň jedna skupina dosahuje odlišného mediánu. Hypotéza práce odpovídá alternativě $H_1^{\mathrm{DL}}$: $\tilde{\mu}_{\mathrm{DL}} > \tilde{\mu}_{\mathrm{ML}}$ a~zároveň $\tilde{\mu}_{\mathrm{DL}} > \tilde{\mu}_{\mathrm{STAT}}$, tedy že medián F1 skupiny hlubokého učení převyšuje mediány obou zbývajících skupin.
+
+Globální test pro srovnání tří skupin je Kruskal--Wallisův test \parencite{Kruskal1952}, který nevyžaduje předpoklad normálního rozložení naměřených hodnot. Pro každé z~$k=10$ opakování $k$-násobné křížové validace (u~modelů nad jednotlivými toky se rozdělení do~částí provádí tak, aby si každá část zachovala stejný poměr normálních a~anomálních toků; u~sekvenčních modelů se použijí souvislé blokové části na~časově seřazeném trénovacím souboru) se spočte průměr F1 přes modely v~každé skupině. Kruskal--Wallisův test poté testuje nulovou hypotézu~$H_0^{\mathrm{glob}}$.
+
+Při zamítnutí globální nulové hypotézy jsou provedena tři párová post-hoc srovnání (hluboké učení vs.~klasické strojové učení, hluboké učení vs.~statistické, klasické strojové učení vs.~statistické) jednostranným Wilcoxonovým testem se znaménky na průměrech F1 v~jednotlivých opakováních křížové validace. $p$-hodnoty jsou korigovány Bonferroniho korekcí (násobení třemi). První dvě párová srovnání přímo ověřují hypotézu práce; třetí srovnání (klasické strojové učení vs.~statistické) slouží jako doplňková explorativní analýza, která umožňuje charakterizovat vztahy mezi skupinami nad rámec hlavního tvrzení.
+
+Sekundární test vylučuje ze skupiny hlubokého učení autoencoder (trénovaný bez učitele) a~porovnává pouze čtyři modely hlubokého učení s~učitelem (CNN, LSTM, GRU, Transformer) se zbylými dvěma skupinami, protože autoencoder se výkonnostně blíží metodám klasického strojového učení.
+
+Doplňkově je uveden Mann--Whitneyův U~test (neparametrický test porovnávající dvě nezávislé skupiny bez~předpokladu normálního rozložení) na úrovni jednotlivých modelů: každý model přispívá jedním F1 z~hlavního rozdělení trénovací a~validační množiny. Slouží jako orientační srovnání nezávislých vzorků.
+
+Pro účely zápisu přesných $p$-hodnot v~textu práce lze soubory \texttt{cv\_<model>.json} znovu vygenerovat skriptem \path{experiments/refresh_cv_only.py}.
+Čte přitom existující soubory \texttt{experiment\_<model>.json} a~vynechává opakovaný hlavní běh na validační části.
+Konkrétní číselné hodnoty testů jsou uvedeny v~sekci~\ref{sec:stat-vyznamnost}.
+
+Všechny výstupy jsou uloženy ve \path{statistical_comparison.json} včetně $p$-hodnot, popisu hypotéz a~řad průměrných F1 podle opakování křížové validace.
+
+\subsection{Reprodukovatelnost}
+\label{sec:reprodukovatelnost}
+
+Celý experimentální postup je reprodukovatelný prostřednictvím cílů v~souboru \texttt{Makefile}:
+
+\begin{enumerate}
+\item \texttt{make install-all} -- instalace závislostí balíčku \texttt{detection-mechanisms} a~experimentálních skriptů.
+\item \texttt{make prepare-data} -- stažení a~normalizace UNSW-NB15 do kanonického formátu; vytvoření trénovacích a~validačních souborů.
+\item \texttt{make evaluate-all} -- spuštění experimentu pro všech 11~modelů včetně desetinásobné křížové validace na trénovací množině (\texttt{-{}-cv-folds 10}); výstupem jsou JSON soubory s~metrikami, soubory \texttt{cv\_<model>.json}, grafy a~statistické srovnání.
+\item \texttt{make generate-thesis-results} -- agregace výsledků a jejich transformace do formátu použitelného v~textu práce.
+\end{enumerate}
+
+Iniciální hodnoty všech generátorů (Python \texttt{random}, NumPy, PyTorch) jsou fixovány na hodnotu~42. Datové soubory pod adresářem \path{data/} nejsou součástí repozitáře (jsou v~\path{.gitignore}), ale lze je deterministicky znovu vytvořit ze zdrojů srovnávacích dat pomocí přípravného postupu zpracování.
+
+\subsection{Hrozby validity}
+\label{sec:hrozby-validity}
+
+V~souladu s~metodikou \textcite{Wohlin2012} je třeba diskutovat hrozby validity experimentu.
+
+Z~hlediska vnitřní validity (internal validity) je hlavní hrozbou volba parametru kontaminace u~metod bez učitele (viz sekce~\ref{sec:predzpracovani}). Hodnoty 0{,}5--0{,}6 byly zvoleny na základě skutečného podílu anomálií v~UNSW-NB15; jiná volba by vedla k~odlišným výsledkům. Tato závislost je inherentní metodám bez učitele a~je diskutována v~kapitole~\ref{chap:vysledky}.
+
+Z~hlediska vnější validity (external validity) je experiment omezen na jednu datovou sadu (UNSW-NB15) s~jedním příznakovým schématem. Výsledky nelze bez dalšího zobecnit na jiné datové sady, příznakové prostory nebo reálné síťové prostředí. Aproximativní mapování UNSW-NB15 na kanonické schéma dále snižuje přímou přenositelnost na čistě HTTPS provoz.
+
+Z~hlediska konstruktové validity (construct validity) je třeba zohlednit, že F1~skóre -- byť standardní metrika -- nemusí plně zachytit praktickou užitečnost detektoru, protože nezohledňuje výpočetní náročnost, latenci při klasifikaci ani interpretovatelnost výstupu. Tyto aspekty jsou v~kapitole~\ref{chap:vysledky} diskutovány kvalitativně.
+
+Z~hlediska závěrové validity (conclusion validity) omezoval dříve malý počet nezávislých pozorování (jedno F1 na model) sílu Mann--Whitneyova testu. Po zavedení $k$-násobné křížové validace a~párového Wilcoxonova testu na průměrech v jednotlivých opakováních se efektivní počet párů rovná počtu opakování ($k=10$), čímž se síla testu zvyšuje za předpokladu, že tato opakování odpovídají náhodnému rozdělení dat.
+
+Tyto limity jsou explicitně reflektovány při interpretaci výsledků v~následující kapitole.

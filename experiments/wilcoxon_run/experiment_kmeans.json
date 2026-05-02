@@ -1,0 +1,19 @@
+{
+  "precision": 0.5765,
+  "recall": 0.5386,
+  "f1": 0.5569,
+  "accuracy": 0.4492,
+  "fpr": 0.7116,
+  "fnr": 0.4614,
+  "tp": 17839,
+  "fp": 13103,
+  "fn": 15282,
+  "tn": 5310,
+  "n_flows": 51534,
+  "n_anomalies_true": 33121,
+  "n_anomalies_pred": 30942,
+  "roc_auc": 0.3756,
+  "pr_auc": 0.6004,
+  "model": "kmeans",
+  "flows_file": "train=data/datasets/canonical_train.csv test=data/datasets/canonical_val.csv"
+}
